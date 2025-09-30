@@ -1,5 +1,5 @@
 {
-    "name": "kirim-email/smtp-sdk",
+    "name": "kirimemail/smtp-sdk",
     "description": "PHP SDK for Kirim.Email SMTP API",
     "type": "library",
     "keywords": ["smtp", "email", "kirim-email", "api", "sdk"],
