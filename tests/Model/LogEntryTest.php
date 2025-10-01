@@ -15,7 +15,7 @@ class LogEntryTest extends TestCase
             'id' => 1,
             'user_guid' => 'user-guid-123',
             'user_domain_guid' => 'domain-guid-456',
-            'event_type' => 'delivered',
+            'event_type' => LogEntry::SMTP_EVENT_DELIVERED,
             'message_guid' => 'msg-guid-789',
             'timestamp' => 1640995200
         ];
@@ -25,7 +25,7 @@ class LogEntryTest extends TestCase
         $this->assertEquals(1, $logEntry->getId());
         $this->assertEquals('user-guid-123', $logEntry->getUserGuid());
         $this->assertEquals('domain-guid-456', $logEntry->getUserDomainGuid());
-        $this->assertEquals('delivered', $logEntry->getEventType());
+        $this->assertEquals(LogEntry::SMTP_EVENT_DELIVERED, $logEntry->getEventType());
         $this->assertEquals('msg-guid-789', $logEntry->getMessageGuid());
         $this->assertEquals(1640995200, $logEntry->getTimestamp());
     }
@@ -56,14 +56,14 @@ class LogEntryTest extends TestCase
         $logEntry->setId(5)
                  ->setUserGuid('user-guid-789')
                  ->setUserDomainGuid('domain-guid-012')
-                 ->setEventType('bounced')
+                 ->setEventType(LogEntry::SMTP_EVENT_BOUNCED)
                  ->setMessageGuid('msg-guid-345')
                  ->setTimestamp(1640995300);
 
         $this->assertEquals(5, $logEntry->getId());
         $this->assertEquals('user-guid-789', $logEntry->getUserGuid());
         $this->assertEquals('domain-guid-012', $logEntry->getUserDomainGuid());
-        $this->assertEquals('bounced', $logEntry->getEventType());
+        $this->assertEquals(LogEntry::SMTP_EVENT_BOUNCED, $logEntry->getEventType());
         $this->assertEquals('msg-guid-345', $logEntry->getMessageGuid());
         $this->assertEquals(1640995300, $logEntry->getTimestamp());
     }
@@ -74,7 +74,7 @@ class LogEntryTest extends TestCase
             'id' => 3,
             'user_guid' => 'array-user-guid',
             'user_domain_guid' => 'array-domain-guid',
-            'event_type' => 'opened',
+            'event_type' => LogEntry::SMTP_EVENT_OPENED,
             'message_guid' => 'array-msg-guid',
             'timestamp' => 1640995400
         ];
@@ -91,7 +91,7 @@ class LogEntryTest extends TestCase
             'id' => 4,
             'user_guid' => 'json-user-guid',
             'user_domain_guid' => 'json-domain-guid',
-            'event_type' => 'clicked',
+            'event_type' => LogEntry::SMTP_EVENT_CLICKED,
             'message_guid' => 'json-msg-guid',
             'timestamp' => 1640995500
         ];
@@ -105,42 +105,79 @@ class LogEntryTest extends TestCase
 
     public function testLogEntryEventTypeCheckers()
     {
-        $sentLog = new LogEntry(['event_type' => 'sent']);
-        $deliveredLog = new LogEntry(['event_type' => 'delivered']);
-        $bouncedLog = new LogEntry(['event_type' => 'bounced']);
-        $openedLog = new LogEntry(['event_type' => 'opened']);
-        $clickedLog = new LogEntry(['event_type' => 'clicked']);
-        $failedLog = new LogEntry(['event_type' => 'failed']);
+        $queuedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_QUEUED]);
+        $sendLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_SEND]);
+        $deliveredLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_DELIVERED]);
+        $bouncedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_BOUNCED]);
+        $failedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_FAILED]);
+        $permanentFailLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_PERMANENT_FAIL]);
+        $openedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_OPENED]);
+        $clickedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_CLICKED]);
+        $unsubscribedLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_UNSUBSCRIBED]);
+        $tempFailureLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_TEMP_FAILURE]);
+        $deferredLog = new LogEntry(['event_type' => LogEntry::SMTP_EVENT_DEFERRED]);
         $otherLog = new LogEntry(['event_type' => 'unknown']);
 
-        $this->assertTrue($sentLog->isSent());
-        $this->assertFalse($sentLog->isDelivered());
-        $this->assertFalse($sentLog->isBounced());
-        $this->assertFalse($sentLog->isOpened());
-        $this->assertFalse($sentLog->isClicked());
-        $this->assertFalse($sentLog->isFailed());
+        // Test each event type
+        $this->assertTrue($queuedLog->isQueued());
+        $this->assertFalse($queuedLog->isDelivered());
+        $this->assertFalse($queuedLog->isBounced());
+        $this->assertFalse($queuedLog->isOpened());
+        $this->assertFalse($queuedLog->isClicked());
+        $this->assertFalse($queuedLog->isFailed());
+
+        $this->assertTrue($sendLog->isSend());
+        $this->assertFalse($sendLog->isQueued());
+        $this->assertFalse($sendLog->isDelivered());
 
         $this->assertTrue($deliveredLog->isDelivered());
-        $this->assertFalse($deliveredLog->isSent());
+        $this->assertFalse($deliveredLog->isQueued());
+        $this->assertFalse($deliveredLog->isSend());
 
         $this->assertTrue($bouncedLog->isBounced());
         $this->assertFalse($bouncedLog->isDelivered());
+        $this->assertFalse($bouncedLog->isFailed());
+
+        $this->assertTrue($failedLog->isFailed());
+        $this->assertFalse($failedLog->isBounced());
+        $this->assertFalse($failedLog->isPermanentFail());
+
+        $this->assertTrue($permanentFailLog->isPermanentFail());
+        $this->assertFalse($permanentFailLog->isFailed());
+        $this->assertFalse($permanentFailLog->isTempFailure());
 
         $this->assertTrue($openedLog->isOpened());
         $this->assertFalse($openedLog->isBounced());
+        $this->assertFalse($openedLog->isClicked());
 
         $this->assertTrue($clickedLog->isClicked());
         $this->assertFalse($clickedLog->isOpened());
+        $this->assertFalse($clickedLog->isUnsubscribed());
 
-        $this->assertTrue($failedLog->isFailed());
-        $this->assertFalse($failedLog->isClicked());
+        $this->assertTrue($unsubscribedLog->isUnsubscribed());
+        $this->assertFalse($unsubscribedLog->isClicked());
+        $this->assertFalse($unsubscribedLog->isOpened());
 
-        $this->assertFalse($otherLog->isSent());
+        $this->assertTrue($tempFailureLog->isTempFailure());
+        $this->assertFalse($tempFailureLog->isFailed());
+        $this->assertFalse($tempFailureLog->isPermanentFail());
+
+        $this->assertTrue($deferredLog->isDeferred());
+        $this->assertFalse($deferredLog->isTempFailure());
+        $this->assertFalse($deferredLog->isQueued());
+
+        // Test unknown event type
+        $this->assertFalse($otherLog->isQueued());
+        $this->assertFalse($otherLog->isSend());
         $this->assertFalse($otherLog->isDelivered());
         $this->assertFalse($otherLog->isBounced());
+        $this->assertFalse($otherLog->isFailed());
+        $this->assertFalse($otherLog->isPermanentFail());
         $this->assertFalse($otherLog->isOpened());
         $this->assertFalse($otherLog->isClicked());
-        $this->assertFalse($otherLog->isFailed());
+        $this->assertFalse($otherLog->isUnsubscribed());
+        $this->assertFalse($otherLog->isTempFailure());
+        $this->assertFalse($otherLog->isDeferred());
     }
 
     public function testLogEntryGetTimestampDateTime()
@@ -191,5 +228,20 @@ class LogEntryTest extends TestCase
         $logEntry->setId(456);
         $this->assertEquals(456, $logEntry->getId());
         $this->assertIsInt($logEntry->getId());
+    }
+
+    public function testLogEntryEventConstants()
+    {
+        $this->assertEquals('queued', LogEntry::SMTP_EVENT_QUEUED);
+        $this->assertEquals('send', LogEntry::SMTP_EVENT_SEND);
+        $this->assertEquals('delivered', LogEntry::SMTP_EVENT_DELIVERED);
+        $this->assertEquals('bounced', LogEntry::SMTP_EVENT_BOUNCED);
+        $this->assertEquals('failed', LogEntry::SMTP_EVENT_FAILED);
+        $this->assertEquals('permanent_fail', LogEntry::SMTP_EVENT_PERMANENT_FAIL);
+        $this->assertEquals('opened', LogEntry::SMTP_EVENT_OPENED);
+        $this->assertEquals('clicked', LogEntry::SMTP_EVENT_CLICKED);
+        $this->assertEquals('unsubscribed', LogEntry::SMTP_EVENT_UNSUBSCRIBED);
+        $this->assertEquals('temp_fail', LogEntry::SMTP_EVENT_TEMP_FAILURE);
+        $this->assertEquals('deferred', LogEntry::SMTP_EVENT_DEFERRED);
     }
 }

@@ -25,6 +25,7 @@ class LogsApi
      * @param array $params Query parameters (start, end, sender, recipient, limit, offset)
      * @return array{data: LogEntry[], count: int, offset: int, limit: int, pagination: Pagination}
      * @throws ApiException
+     * @see LogEntry For available event type constants (SMTP_EVENT_QUEUED, SMTP_EVENT_DELIVERED, etc.)
      */
     public function getLogs(string $domain, array $params = []): array
     {
@@ -54,6 +55,7 @@ class LogsApi
      * @param string $messageGuid Message GUID
      * @return array{data: LogEntry[]}
      * @throws ApiException
+     * @see LogEntry For available event type constants (SMTP_EVENT_QUEUED, SMTP_EVENT_DELIVERED, etc.)
      */
     public function getMessageLogs(string $domain, string $messageGuid): array
     {
@@ -76,6 +78,7 @@ class LogsApi
      * @param array $params Query parameters (start, end, sender, recipient, limit)
      * @return \Generator<LogEntry>
      * @throws ApiException
+     * @see LogEntry For available event type constants (SMTP_EVENT_QUEUED, SMTP_EVENT_DELIVERED, etc.)
      */
     public function streamLogs(string $domain, array $params = []): \Generator
     {

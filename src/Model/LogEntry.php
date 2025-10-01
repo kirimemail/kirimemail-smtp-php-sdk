@@ -8,6 +8,19 @@ use JsonSerializable;
 
 class LogEntry implements JsonSerializable
 {
+    // Event type constants
+    public const SMTP_EVENT_QUEUED = 'queued';
+    public const SMTP_EVENT_SEND = 'send';
+    public const SMTP_EVENT_DELIVERED = 'delivered';
+    public const SMTP_EVENT_BOUNCED = 'bounced';
+    public const SMTP_EVENT_FAILED = 'failed';
+    public const SMTP_EVENT_PERMANENT_FAIL = 'permanent_fail';
+    public const SMTP_EVENT_OPENED = 'opened';
+    public const SMTP_EVENT_CLICKED = 'clicked';
+    public const SMTP_EVENT_UNSUBSCRIBED = 'unsubscribed';
+    public const SMTP_EVENT_TEMP_FAILURE = 'temp_fail';
+    public const SMTP_EVENT_DEFERRED = 'deferred';
+
     private ?int $id;
     private ?string $userGuid;
     private ?string $userDomainGuid;
@@ -96,34 +109,59 @@ class LogEntry implements JsonSerializable
         return $this->timestamp ? new \DateTime('@' . $this->timestamp) : null;
     }
 
-    public function isSent(): bool
+    public function isQueued(): bool
     {
-        return $this->eventType === 'sent';
+        return $this->eventType === self::SMTP_EVENT_QUEUED;
+    }
+
+    public function isSend(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_SEND;
     }
 
     public function isDelivered(): bool
     {
-        return $this->eventType === 'delivered';
+        return $this->eventType === self::SMTP_EVENT_DELIVERED;
     }
 
     public function isBounced(): bool
     {
-        return $this->eventType === 'bounced';
-    }
-
-    public function isOpened(): bool
-    {
-        return $this->eventType === 'opened';
-    }
-
-    public function isClicked(): bool
-    {
-        return $this->eventType === 'clicked';
+        return $this->eventType === self::SMTP_EVENT_BOUNCED;
     }
 
     public function isFailed(): bool
     {
-        return $this->eventType === 'failed';
+        return $this->eventType === self::SMTP_EVENT_FAILED;
+    }
+
+    public function isPermanentFail(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_PERMANENT_FAIL;
+    }
+
+    public function isOpened(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_OPENED;
+    }
+
+    public function isClicked(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_CLICKED;
+    }
+
+    public function isUnsubscribed(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_UNSUBSCRIBED;
+    }
+
+    public function isTempFailure(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_TEMP_FAILURE;
+    }
+
+    public function isDeferred(): bool
+    {
+        return $this->eventType === self::SMTP_EVENT_DEFERRED;
     }
 
     public function toArray(): array
