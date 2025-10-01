@@ -143,4 +143,33 @@ class DomainsApi
     {
         return $this->client->post("/api/domains/{$domain}/verify-auth-domain");
     }
+
+    /**
+     * Setup tracking domain
+     *
+     * @param string $domain Domain name
+     * @param string $trackingDomain Tracking domain for click and open tracking
+     * @return array{success: bool, data: array}
+     * @throws ApiException
+     */
+    public function setupTracklink(string $domain, string $trackingDomain): array
+    {
+        $data = [
+            'tracking_domain' => $trackingDomain,
+        ];
+
+        return $this->client->post("/api/domains/{$domain}/setup-tracklink", $data);
+    }
+
+    /**
+     * Verify tracking domain DNS records
+     *
+     * @param string $domain Domain name
+     * @return array{success: bool, records: array}
+     * @throws ApiException
+     */
+    public function verifyTracklink(string $domain): array
+    {
+        return $this->client->post("/api/domains/{$domain}/verify-tracklink");
+    }
 }

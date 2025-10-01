@@ -263,6 +263,78 @@ class DomainsApiTest extends TestCase
         $this->assertEquals(0, $result['pagination']->getTotal());
     }
 
+    public function testSetupTracklink()
+    {
+        $mockResponse = [
+            'success' => true,
+            'message' => 'Tracking domain setup successfully',
+            'data' => [
+                'tracking_domain' => 'track.example.com',
+                'cname_target' => 'track.kirim.email'
+            ]
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/setup-tracklink', ['tracking_domain' => 'track.example.com'])
+            ->willReturn($mockResponse);
+
+        $result = $this->domainsApi->setupTracklink('example.com', 'track.example.com');
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('track.example.com', $result['data']['tracking_domain']);
+        $this->assertEquals('track.kirim.email', $result['data']['cname_target']);
+    }
+
+    public function testVerifyTracklink()
+    {
+        $mockResponse = [
+            'success' => true,
+            'message' => 'Tracking domain verification completed',
+            'records' => [
+                'cname' => true,
+                'tracking_domain' => 'track.example.com'
+            ]
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/verify-tracklink')
+            ->willReturn($mockResponse);
+
+        $result = $this->domainsApi->verifyTracklink('example.com');
+
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['records']['cname']);
+        $this->assertEquals('track.example.com', $result['records']['tracking_domain']);
+    }
+
+    public function testSetupTracklinkThrowsException()
+    {
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/setup-tracklink', ['tracking_domain' => 'track.example.com'])
+            ->willThrowException(new ApiException('Invalid tracking domain'));
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Invalid tracking domain');
+
+        $this->domainsApi->setupTracklink('example.com', 'track.example.com');
+    }
+
+    public function testVerifyTracklinkThrowsException()
+    {
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/verify-tracklink')
+            ->willThrowException(new ApiException('Tracking domain not configured'));
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Tracking domain not configured');
+
+        $this->domainsApi->verifyTracklink('example.com');
+    }
+
     public function testListDomainsThrowsException()
     {
         $this->mockClient->expects($this->once())
