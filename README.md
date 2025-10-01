@@ -22,7 +22,7 @@ A comprehensive PHP SDK for integrating with the KirimEmail SMTP API. This SDK p
 Install the SDK using Composer:
 
 ```bash
-composer require kirim-email/smtp-sdk
+composer require kirimemail/smtp-sdk
 ```
 
 ## Quick Start
