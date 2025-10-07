@@ -228,6 +228,34 @@ class MessagesApiTest extends TestCase
         $this->assertEquals('Message with custom headers sent successfully', $result['message']);
     }
 
+    public function testSendMessageWithFromName()
+    {
+        $mockResponse = [
+            'success' => true,
+            'message' => 'Message with from_name sent successfully'
+        ];
+
+        $emailData = [
+            'from' => 'sender@example.com',
+            'from_name' => 'Company Name',
+            'to' => 'recipient@example.com',
+            'subject' => 'Email with From Name',
+            'text' => 'This email has a custom from name'
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/message', $emailData)
+            ->willReturn($mockResponse);
+
+        $result = $this->messagesApi->sendMessage('example.com', $emailData);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('Message with from_name sent successfully', $result['message']);
+    }
+
+
+
     public function testSendMessageValidation()
     {
         $this->expectException(ApiException::class);
@@ -302,6 +330,22 @@ class MessagesApiTest extends TestCase
         $this->messagesApi->sendMessage('example.com', $invalidData);
     }
 
+    public function testSendMessageWithInvalidFromName()
+    {
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Invalid from_name: must be a string');
+
+        $invalidData = [
+            'from' => 'sender@example.com',
+            'from_name' => 123, // Invalid type
+            'to' => 'recipient@example.com',
+            'subject' => 'Test',
+            'text' => 'Hello'
+        ];
+
+        $this->messagesApi->sendMessage('example.com', $invalidData);
+    }
+
     public function testSendMessageThrowsException()
     {
         $this->mockClient->expects($this->once())
@@ -343,4 +387,40 @@ class MessagesApiTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertEquals('Template message sent to multiple recipients', $result['message']);
     }
+
+    public function testSendTemplateMessageWithFromName()
+    {
+        $mockResponse = [
+            'success' => true,
+            'message' => 'Template message with from_name sent successfully',
+            'data' => [
+                'template_guid' => 'template-guid-123',
+                'template_name' => 'Welcome Email'
+            ]
+        ];
+
+        $templateData = [
+            'template_guid' => 'template-guid-123',
+            'from' => 'sender@example.com',
+            'from_name' => 'Company Name',
+            'to' => 'recipient@example.com',
+            'variables' => [
+                'name' => 'John Doe',
+                'product' => 'Test Product'
+            ]
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('post')
+            ->with('/api/domains/example.com/message/template', $templateData)
+            ->willReturn($mockResponse);
+
+        $result = $this->messagesApi->sendTemplateMessage('example.com', $templateData);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('Template message with from_name sent successfully', $result['message']);
+        $this->assertEquals('template-guid-123', $result['data']['template_guid']);
+    }
+
+
 }
