@@ -8,6 +8,9 @@ use KirimEmail\Smtp\Api\CredentialsApi;
 use KirimEmail\Smtp\Api\MessagesApi;
 use KirimEmail\Smtp\Api\LogsApi;
 use KirimEmail\Smtp\Api\SuppressionsApi;
+use KirimEmail\Smtp\Api\EmailValidationApi;
+use KirimEmail\Smtp\Api\UserApi;
+use KirimEmail\Smtp\Api\WebhooksApi;
 use KirimEmail\Smtp\Exception\ApiException;
 use KirimEmail\Smtp\Exception\AuthenticationException;
 use KirimEmail\Smtp\Exception\ValidationException;
@@ -27,6 +30,9 @@ try {
     $messagesApi = new MessagesApi($client);
     $logsApi = new LogsApi($client);
     $suppressionsApi = new SuppressionsApi($client);
+    $emailValidationApi = new EmailValidationApi($client);
+    $userApi = new UserApi($client);
+    $webhooksApi = new WebhooksApi($client);
 
     echo "=== KirimEmail SMTP SDK Usage Examples ===\n\n";
 
@@ -234,8 +240,133 @@ try {
 
     echo "\n";
 
+    // === EMAIL VALIDATION API EXAMPLES ===
+    echo "6. EMAIL VALIDATION API EXAMPLES\n";
+    echo "----------------------------------\n";
+
+    // Validate a single email
+    try {
+        $result = $emailValidationApi->validate('test@example.com');
+        echo "✓ Validated email: {$result['data']->getEmail()}\n";
+        echo "  Is valid: " . ($result['data']->isValid() ? 'Yes' : 'No') . "\n";
+        if (!$result['data']->isCached()) {
+            echo "  Validated at: {$result['data']->getValidatedAt()}\n";
+        }
+    } catch (ApiException $e) {
+        echo "✗ Failed to validate email: " . $e->getMessage() . "\n";
+    }
+
+    // Validate with strict mode
+    try {
+        $result = $emailValidationApi->validateStrict('test@example.com');
+        echo "✓ Strict validated email: {$result['data']->getEmail()}\n";
+        echo "  Is valid: " . ($result['data']->isValid() ? 'Yes' : 'No') . "\n";
+    } catch (ApiException $e) {
+        echo "✗ Failed to strictly validate email: " . $e->getMessage() . "\n";
+    }
+
+    // Validate batch of emails
+    try {
+        $emails = ['test1@example.com', 'test2@example.com', 'test3@example.com'];
+        $result = $emailValidationApi->validateBatch($emails);
+        echo "✓ Validated " . count($emails) . " emails\n";
+        echo "  Valid: " . $result['data']->getValidCount() . "\n";
+        echo "  Invalid: " . $result['data']->getInvalidCount() . "\n";
+        echo "  Cached: " . $result['data']->getCachedCount() . "\n";
+        echo "  Freshly validated: " . $result['data']->getValidatedCount() . "\n";
+    } catch (ApiException $e) {
+        echo "✗ Failed to validate batch: " . $e->getMessage() . "\n";
+    }
+
+    echo "\n";
+
+    // === USER API EXAMPLES ===
+    echo "7. USER API EXAMPLES\n";
+    echo "-----------------------\n";
+
+    // Get user quota
+    try {
+        $quota = $userApi->getQuota();
+        echo "✓ Retrieved quota information\n";
+        echo "  Current quota: " . $quota['data']['current_quota'] . "\n";
+        echo "  Max quota: " . $quota['data']['max_quota'] . "\n";
+        echo "  Usage percentage: " . $quota['data']['usage_percentage'] . "%\n";
+    } catch (ApiException $e) {
+        echo "✗ Failed to get quota: " . $e->getMessage() . "\n";
+    }
+
+    echo "\n";
+
+    // === WEBHOOKS API EXAMPLES ===
+    echo "8. WEBHOOKS API EXAMPLES\n";
+    echo "----------------------------\n";
+
+    // List webhooks
+    try {
+        $webhooks = $webhooksApi->getWebhooks($domain);
+        echo "✓ Retrieved " . count($webhooks['data']) . " webhooks\n";
+
+        if (!empty($webhooks['data'])) {
+            $firstWebhook = $webhooks['data'][0];
+            echo "  First webhook: {$firstWebhook->getType()} -> {$firstWebhook->getUrl()}\n";
+        }
+    } catch (ApiException $e) {
+        echo "✗ Failed to list webhooks: " . $e->getMessage() . "\n";
+    }
+
+    // Create a new webhook
+    try {
+        $result = $webhooksApi->createWebhook($domain, 'delivered', 'https://example.com/webhook');
+        echo "✓ Created webhook: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        if (isset($result['data'])) {
+            echo "  GUID: {$result['data']->getWebhookGuid()}\n";
+        }
+    } catch (ApiException $e) {
+        echo "✗ Failed to create webhook: " . $e->getMessage() . "\n";
+    }
+
+    // Get a specific webhook
+    try {
+        $webhookGuid = '550e8400-e29b-41d4-a716-446655440000'; // Replace with actual webhook GUID
+        $webhook = $webhooksApi->getWebhook($domain, $webhookGuid);
+        echo "✓ Got webhook details\n";
+        echo "  Type: {$webhook['data']->getType()}\n";
+        echo "  URL: {$webhook['data']->getUrl()}\n";
+    } catch (ApiException $e) {
+        echo "✗ Failed to get webhook: " . $e->getMessage() . "\n";
+    }
+
+    // Test a webhook URL
+    try {
+        $result = $webhooksApi->testWebhook($domain, 'https://example.com/webhook', 'delivered');
+        echo "✓ Tested webhook: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        if (isset($result['data']['response_status'])) {
+            echo "  Response status: {$result['data']['response_status']}\n";
+        }
+        if (isset($result['data']['response_time'])) {
+            echo "  Response time: {$result['data']['response_time']}ms\n";
+        }
+    } catch (ApiException $e) {
+        echo "✗ Failed to test webhook: " . $e->getMessage() . "\n";
+    }
+
+    echo "\n";
+
+    // Delete a webhook (commented out - uncomment with actual webhook GUID)
+    /*
+    try {
+        $webhookGuid = '550e8400-e29b-41d4-a716-446655440000'; // Replace with actual webhook GUID
+        $result = $webhooksApi->deleteWebhook($domain, $webhookGuid);
+        echo "✓ Deleted webhook: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+    } catch (ApiException $e) {
+        echo "✗ Failed to delete webhook: " . $e->getMessage() . "\n";
+    }
+    */
+
+    echo "\n";
+
     // === ERROR HANDLING EXAMPLES ===
-    echo "6. ERROR HANDLING EXAMPLES\n";
+    echo "9. ERROR HANDLING EXAMPLES\n";
     echo "----------------------------\n";
 
     // Example of specific exception handling

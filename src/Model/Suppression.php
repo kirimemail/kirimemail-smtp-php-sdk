@@ -193,7 +193,7 @@ class Suppression implements JsonSerializable
 
     public function toArray(): array
     {
-        return [
+        return array_filter([
             'id' => $this->id,
             'user_guid' => $this->userGuid,
             'user_domain_guid' => $this->userDomainGuid,
@@ -205,7 +205,9 @@ class Suppression implements JsonSerializable
             'tags' => $this->tags,
             'created_at' => $this->createdAt,
             'modified_at' => $this->modifiedAt,
-        ];
+        ], function ($value) {
+            return $value !== null;
+        });
     }
 
     public function jsonSerialize(): array

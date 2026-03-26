@@ -25,16 +25,16 @@ class MessagesApi
  * @return array{success: bool, message: string}
  * @throws ApiException
  */
-public function sendMessage(string $domain, array $data, array $files = []): array
-{
-    $this->validateEmailData($data);
+    public function sendMessage(string $domain, array $data, array $files = []): array
+    {
+        $this->validateEmailData($data);
 
-    if (!empty($files)) {
-        return $this->client->postMultipart("/api/domains/{$domain}/message", $data, $files);
+        if (!empty($files)) {
+            return $this->client->postMultipart("/api/domains/{$domain}/message", $data, $files);
+        }
+
+        return $this->client->post("/api/domains/{$domain}/message", $data);
     }
-
-    return $this->client->post("/api/domains/{$domain}/message", $data);
-}
 
 /**
  * Send template-based email
@@ -45,16 +45,16 @@ public function sendMessage(string $domain, array $data, array $files = []): arr
  * @return array{success: bool, message: string, template_guid: string, template_name: string}
  * @throws ApiException
  */
-public function sendTemplateMessage(string $domain, array $data, array $files = []): array
-{
-    $this->validateTemplateData($data);
+    public function sendTemplateMessage(string $domain, array $data, array $files = []): array
+    {
+        $this->validateTemplateData($data);
 
-    if (!empty($files)) {
-        return $this->client->postMultipart("/api/domains/{$domain}/message/template", $data, $files);
+        if (!empty($files)) {
+            return $this->client->postMultipart("/api/domains/{$domain}/message/template", $data, $files);
+        }
+
+        return $this->client->post("/api/domains/{$domain}/message/template", $data);
     }
-
-    return $this->client->post("/api/domains/{$domain}/message/template", $data);
-}
 
 /**
  * Validate email data
@@ -62,42 +62,42 @@ public function sendTemplateMessage(string $domain, array $data, array $files = 
  * @param array $data
  * @throws ApiException
  */
-private function validateEmailData(array $data): void
-{
-    $required = ['from', 'to', 'subject', 'text'];
-    foreach ($required as $field) {
-        if (empty($data[$field])) {
-            throw new ApiException("Missing required field: {$field}");
-        }
-    }
-
-    // Validate email addresses
-    if (!$this->isValidEmail($data['from'])) {
-        throw new ApiException("Invalid from email address: {$data['from']}");
-    }
-
-    if (is_array($data['to'])) {
-        foreach ($data['to'] as $email) {
-            if (!$this->isValidEmail($email)) {
-                throw new ApiException("Invalid to email address: {$email}");
+    private function validateEmailData(array $data): void
+    {
+        $required = ['from', 'to', 'subject', 'text'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                throw new ApiException("Missing required field: {$field}");
             }
         }
-    } else {
-        if (!$this->isValidEmail($data['to'])) {
-            throw new ApiException("Invalid to email address: {$data['to']}");
+
+        // Validate email addresses
+        if (!$this->isValidEmail($data['from'])) {
+            throw new ApiException("Invalid from email address: {$data['from']}");
+        }
+
+        if (is_array($data['to'])) {
+            foreach ($data['to'] as $email) {
+                if (!$this->isValidEmail($email)) {
+                    throw new ApiException("Invalid to email address: {$email}");
+                }
+            }
+        } else {
+            if (!$this->isValidEmail($data['to'])) {
+                throw new ApiException("Invalid to email address: {$data['to']}");
+            }
+        }
+
+        // Validate reply_to if provided
+        if (!empty($data['reply_to']) && !$this->isValidEmail($data['reply_to'])) {
+            throw new ApiException("Invalid reply_to email address: {$data['reply_to']}");
+        }
+
+        // Validate from_name if provided (should be a string)
+        if (!empty($data['from_name']) && !is_string($data['from_name'])) {
+            throw new ApiException("Invalid from_name: must be a string");
         }
     }
-
-    // Validate reply_to if provided
-    if (!empty($data['reply_to']) && !$this->isValidEmail($data['reply_to'])) {
-        throw new ApiException("Invalid reply_to email address: {$data['reply_to']}");
-    }
-
-    // Validate from_name if provided (should be a string)
-    if (!empty($data['from_name']) && !is_string($data['from_name'])) {
-        throw new ApiException("Invalid from_name: must be a string");
-    }
-}
 
 /**
  * Validate template data
@@ -105,44 +105,44 @@ private function validateEmailData(array $data): void
  * @param array $data
  * @throws ApiException
  */
-private function validateTemplateData(array $data): void
-{
-    if (empty($data['template_guid'])) {
-        throw new ApiException("Missing required field: template_guid");
-    }
+    private function validateTemplateData(array $data): void
+    {
+        if (empty($data['template_guid'])) {
+            throw new ApiException("Missing required field: template_guid");
+        }
 
-    if (empty($data['to'])) {
-        throw new ApiException("Missing required field: to");
-    }
+        if (empty($data['to'])) {
+            throw new ApiException("Missing required field: to");
+        }
 
-    // Validate email addresses
-    if (is_array($data['to'])) {
-        foreach ($data['to'] as $email) {
-            if (!$this->isValidEmail($email)) {
-                throw new ApiException("Invalid to email address: {$email}");
+        // Validate email addresses
+        if (is_array($data['to'])) {
+            foreach ($data['to'] as $email) {
+                if (!$this->isValidEmail($email)) {
+                    throw new ApiException("Invalid to email address: {$email}");
+                }
+            }
+        } else {
+            if (!$this->isValidEmail($data['to'])) {
+                throw new ApiException("Invalid to email address: {$data['to']}");
             }
         }
-    } else {
-        if (!$this->isValidEmail($data['to'])) {
-            throw new ApiException("Invalid to email address: {$data['to']}");
+
+        // Validate from if provided
+        if (!empty($data['from']) && !$this->isValidEmail($data['from'])) {
+            throw new ApiException("Invalid from email address: {$data['from']}");
+        }
+
+        // Validate reply_to if provided
+        if (!empty($data['reply_to']) && !$this->isValidEmail($data['reply_to'])) {
+            throw new ApiException("Invalid reply_to email address: {$data['reply_to']}");
+        }
+
+        // Validate from_name if provided (should be a string)
+        if (!empty($data['from_name']) && !is_string($data['from_name'])) {
+            throw new ApiException("Invalid from_name: must be a string");
         }
     }
-
-    // Validate from if provided
-    if (!empty($data['from']) && !$this->isValidEmail($data['from'])) {
-        throw new ApiException("Invalid from email address: {$data['from']}");
-    }
-
-    // Validate reply_to if provided
-    if (!empty($data['reply_to']) && !$this->isValidEmail($data['reply_to'])) {
-        throw new ApiException("Invalid reply_to email address: {$data['reply_to']}");
-    }
-
-    // Validate from_name if provided (should be a string)
-    if (!empty($data['from_name']) && !is_string($data['from_name'])) {
-        throw new ApiException("Invalid from_name: must be a string");
-    }
-}
 
     /**
      * Validate email address

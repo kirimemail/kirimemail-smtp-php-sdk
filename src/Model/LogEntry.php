@@ -53,7 +53,8 @@ class LogEntry implements JsonSerializable
 
     public function __construct(array $data = [])
     {
-        $this->id = $data['id'] ?? null;
+        $id = $data['id'] ?? null;
+        $this->id = is_int($id) ? (string) $id : $id;
         $this->userGuid = $data['user_guid'] ?? null;
         $this->userDomainGuid = $data['user_domain_guid'] ?? null;
         $this->userSmtpGuid = $data['user_smtp_guid'] ?? null;
@@ -74,14 +75,14 @@ class LogEntry implements JsonSerializable
         $this->eventDetail = $data['event_detail'] ?? null;
         $this->tags = $data['tags'] ?? null;
         $this->subject = $data['subject'] ?? null;
-        $this->createdAt = isset($data['created_at']) ? (int)$data['created_at'] : null;
-        $this->sendingAt = isset($data['sending_at']) ? (int)$data['sending_at'] : null;
-        $this->deliveredAt = isset($data['delivered_at']) ? (int)$data['delivered_at'] : null;
-        $this->inDate = isset($data['in_date']) ? (int)$data['in_date'] : null;
-        $this->inDateHour = isset($data['in_date_hour']) ? (int)$data['in_date_hour'] : null;
-        $this->inYearWeek = isset($data['in_year_week']) ? (int)$data['in_year_week'] : null;
-        $this->inYearMonth = isset($data['in_year_month']) ? (int)$data['in_year_month'] : null;
-        $this->inYear = isset($data['in_year']) ? (int)$data['in_year'] : null;
+        $this->createdAt = $data['created_at'] ?? null;
+        $this->sendingAt = $data['sending_at'] ?? null;
+        $this->deliveredAt = $data['delivered_at'] ?? null;
+        $this->inDate = $data['in_date'] ?? null;
+        $this->inDateHour = $data['in_date_hour'] ?? null;
+        $this->inYearWeek = $data['in_year_week'] ?? null;
+        $this->inYearMonth = $data['in_year_month'] ?? null;
+        $this->inYear = $data['in_year'] ?? null;
     }
 
     public function getId(): ?string

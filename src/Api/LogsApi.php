@@ -152,7 +152,7 @@ class LogsApi
         return $this->getLogs($domain, $params);
     }
 
-    
+
     /**
      * Validate log parameters
      *

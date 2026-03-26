@@ -55,7 +55,7 @@ class SuppressionsApi
      */
     public function getUnsubscribeSuppressions(string $domain, array $params = []): array
     {
-        return $this->getSuppressionsByType($domain, 'unsubscribes', $params);
+        return $this->getSuppressionsByType($domain, 'unsubscribe', $params);
     }
 
     /**
@@ -68,7 +68,7 @@ class SuppressionsApi
      */
     public function getBounceSuppressions(string $domain, array $params = []): array
     {
-        return $this->getSuppressionsByType($domain, 'bounces', $params);
+        return $this->getSuppressionsByType($domain, 'bounce', $params);
     }
 
     /**
@@ -137,7 +137,7 @@ class SuppressionsApi
         return $this->getSuppressions($domain, $params);
     }
 
-  
+
     /**
      * Get suppressions created after a specific date
      *
@@ -153,7 +153,7 @@ class SuppressionsApi
         // For now, we'll get all suppressions and filter client-side
         $allSuppressions = $this->getSuppressions($domain, $additionalParams);
 
-        $filteredSuppressions = array_filter($allSuppressions['data'], function($suppression) use ($startDate) {
+        $filteredSuppressions = array_filter($allSuppressions['data'], function ($suppression) use ($startDate) {
             $createdAt = $suppression->getCreatedAtDateTime();
             return $createdAt && $createdAt >= $startDate;
         });
@@ -166,6 +166,100 @@ class SuppressionsApi
     }
 
     /**
+     * Delete unsubscribe suppressions
+     *
+     * @param string $domain Domain name
+     * @param array $ids Array of suppression IDs to delete
+     * @return array{success: bool, message: string, deleted_count: int}
+     * @throws ApiException
+     */
+    public function deleteUnsubscribeSuppressions(string $domain, array $ids): array
+    {
+        return $this->deleteSuppressions($domain, 'unsubscribes', $ids);
+    }
+
+    /**
+     * Delete bounce suppressions
+     *
+     * @param string $domain Domain name
+     * @param array $ids Array of suppression IDs to delete
+     * @return array{success: bool, message: string, deleted_count: int}
+     * @throws ApiException
+     */
+    public function deleteBounceSuppressions(string $domain, array $ids): array
+    {
+        return $this->deleteSuppressions($domain, 'bounces', $ids);
+    }
+
+    /**
+     * Delete whitelist suppressions
+     *
+     * @param string $domain Domain name
+     * @param array $ids Array of suppression IDs to delete
+     * @return array{success: bool, message: string, deleted_count: int}
+     * @throws ApiException
+     */
+    public function deleteWhitelistSuppressions(string $domain, array $ids): array
+    {
+        return $this->deleteSuppressions($domain, 'whitelist', $ids);
+    }
+
+    /**
+     * Create a whitelist suppression
+     *
+     * @param string $domain Domain name
+     * @param string $recipient Email or domain to whitelist
+     * @param string $recipientType Type of recipient (email or domain)
+     * @param string|null $description Optional description
+     * @return array{success: bool, message: string, data: Suppression}
+     * @throws ApiException
+     */
+    public function createWhitelistSuppression(string $domain, string $recipient, string $recipientType, ?string $description = null): array
+    {
+        $this->validateRecipientType($recipientType);
+
+        $data = [
+            'recipient' => $recipient,
+            'recipient_type' => $recipientType,
+        ];
+
+        if ($description !== null) {
+            $data['description'] = $description;
+        }
+
+        $response = $this->client->post("/api/domains/{$domain}/suppressions/whitelist", $data);
+
+        return [
+            'success' => true,
+            'message' => $response['message'] ?? 'Whitelist entry created successfully.',
+            'data' => new Suppression($response['data']),
+        ];
+    }
+
+    /**
+     * Delete suppressions by type
+     *
+     * @param string $domain Domain name
+     * @param string $type Suppression type endpoint (unsubscribes, bounces, whitelist)
+     * @param array $ids Array of suppression IDs to delete
+     * @return array{success: bool, message: string, deleted_count: int}
+     * @throws ApiException
+     */
+    private function deleteSuppressions(string $domain, string $type, array $ids): array
+    {
+        $this->validateSuppressionIds($ids);
+
+        $data = ['ids' => $ids];
+        $response = $this->client->delete("/api/domains/{$domain}/suppressions/{$type}", [], $data);
+
+        return [
+            'success' => true,
+            'message' => $response['message'] ?? 'Suppressions deleted successfully.',
+            'deleted_count' => $response['deleted_count'] ?? count($ids),
+        ];
+    }
+
+    /**
      * Validate suppression parameters
      *
      * @param array $params
@@ -173,9 +267,9 @@ class SuppressionsApi
      */
     private function validateSuppressionParams(array $params): void
     {
-        // Validate type
+        // Validate type - support both query parameter types and endpoint path segments
         if (isset($params['type'])) {
-            $validTypes = ['unsubscribe', 'bounce', 'whitelist'];
+            $validTypes = ['unsubscribe', 'bounce', 'whitelist', 'unsubscribes', 'bounces'];
             if (!in_array($params['type'], $validTypes)) {
                 throw new ApiException("Invalid suppression type. Must be one of: " . implode(', ', $validTypes));
             }
@@ -194,6 +288,40 @@ class SuppressionsApi
             if ($perPage < 10 || $perPage > 100) {
                 throw new ApiException("Per page must be between 10 and 100.");
             }
+        }
+    }
+
+    /**
+     * Validate suppression IDs
+     *
+     * @param array $ids
+     * @throws ApiException
+     */
+    private function validateSuppressionIds(array $ids): void
+    {
+        if (empty($ids)) {
+            throw new ApiException("Suppression IDs array is required");
+        }
+
+        foreach ($ids as $id) {
+            if (!is_int($id) || $id < 1) {
+                throw new ApiException("Invalid suppression ID: {$id}");
+            }
+        }
+    }
+
+    /**
+     * Validate recipient type
+     *
+     * @param string $recipientType
+     * @throws ApiException
+     */
+    private function validateRecipientType(string $recipientType): void
+    {
+        $validTypes = ['email', 'domain'];
+
+        if (!in_array($recipientType, $validTypes)) {
+            throw new ApiException("Invalid recipient type. Must be one of: " . implode(', ', $validTypes));
         }
     }
 }
