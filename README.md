@@ -256,6 +256,128 @@ foreach ($logsApi->streamLogs('example.com', ['limit' => 1000]) as $log) {
 }
 ```
 
+ ### Suppressions API
+
+Manage email suppressions to maintain sending reputation.
+
+```php
+use KirimEmail\Smtp\Api\SuppressionsApi;
+
+$suppressionsApi = new SuppressionsApi($client);
+
+// Get all suppressions
+$suppressions = $suppressionsApi->getSuppressions('example.com');
+
+// Get suppressions by type
+$unsubscribes = $suppressionsApi->getUnsubscribeSuppressions('example.com');
+$bounces = $suppressionsApi->getBounceSuppressions('example.com');
+$whitelists = $suppressionsApi->getWhitelistSuppressions('example.com');
+
+// Search suppressions
+$results = $suppressionsApi->searchSuppressions('example.com', 'user@example.com');
+
+// Check if an email is suppressed
+$status = $suppressionsApi->isSuppressed('example.com', 'user@example.com');
+if ($status['suppressed']) {
+    echo "Email is suppressed with type: " . $status['type'];
+}
+
+// Delete suppressions by IDs
+$result = $suppressionsApi->deleteUnsubscribeSuppressions('example.com', [1, 2, 3]);
+echo "Deleted {$result['deleted_count']} suppressions.";
+
+// Create whitelist suppression
+$result = $suppressionsApi->createWhitelistSuppression('example.com', 'trusted@sender.com', 'email', 'Trusted partner');
+```
+
+### Email Validation API
+
+Validate email addresses with comprehensive checks including RFC compliance, DNS verification, and spamtrap detection.
+
+```php
+use KirimEmail\Smtp\Api\EmailValidationApi;
+
+$emailValidationApi = new EmailValidationApi($client);
+
+// Validate a single email
+$result = $emailValidationApi->validate('user@example.com');
+echo "Is valid: " . ($result['data']->isValid() ? 'Yes' : 'No');
+if (!$result['data']->isCached()) {
+    echo "Validated at: " . $result['data']->getValidatedAt();
+}
+
+// Validate with strict mode
+$result = $emailValidationApi->validateStrict('user@example.com');
+echo "Strict validation result: " . ($result['data']->isValid() ? 'Pass' : 'Fail');
+
+// Validate multiple emails
+$emails = ['user1@example.com', 'user2@example.com', 'user3@example.com'];
+$result = $emailValidationApi->validateBatch($emails);
+echo "Valid: {$result['data']->getValidCount()}, Invalid: {$result['data']->getInvalidCount()}";
+echo "Cached: {$result['data']->getCachedCount()}, Freshly validated: {$result['data']->getValidatedCount()}";
+
+// Validate batch with strict mode
+$result = $emailValidationApi->validateBatchStrict($emails);
+echo "Strict batch validation completed.";
+```
+
+### User API
+
+Get user quota information and usage statistics.
+
+```php
+use KirimEmail\Smtp\Api\UserApi;
+
+$userApi = new UserApi($client);
+
+// Get user quota
+$quota = $userApi->getQuota();
+echo "Current quota: {$quota['data']['current_quota']}";
+echo "Max quota: {$quota['data']['max_quota']}";
+echo "Usage percentage: {$quota['data']['usage_percentage']}%";
+```
+
+### Webhooks API
+
+Manage webhook configurations for real-time email event notifications.
+
+```php
+use KirimEmail\Smtp\Api\WebhooksApi;
+
+$webhooksApi = new WebhooksApi($client);
+
+// List webhooks
+$webhooks = $webhooksApi->getWebhooks('example.com');
+foreach ($webhooks['data'] as $webhook) {
+    echo "Webhook: {$webhook->getType()} -> {$webhook->getUrl()}\n";
+}
+
+// Create a new webhook
+$result = $webhooksApi->createWebhook('example.com', 'delivered', 'https://example.com/webhook');
+echo "Created webhook with GUID: {$result['data']->getWebhookGuid()}";
+
+// Get specific webhook
+$webhook = $webhooksApi->getWebhook('example.com', 'webhook-guid-here');
+echo "Webhook type: {$webhook->getType()}, URL: {$webhook->getUrl()}";
+
+// Update webhook
+$webhook = $webhooksApi->updateWebhook('example.com', 'webhook-guid-here', [
+    'type' => 'opened',
+    'url' => 'https://example.com/new-webhook'
+]);
+echo "Webhook updated successfully.";
+
+// Delete webhook
+$result = $webhooksApi->deleteWebhook('example.com', 'webhook-guid-here');
+echo "Webhook deleted successfully.";
+
+// Test webhook URL
+$result = $webhooksApi->testWebhook('example.com', 'https://example.com/webhook', 'delivered');
+if ($result['success']) {
+    echo "Webhook test successful. Response status: {$result['data']['response_status']}";
+}
+```
+
 ### Suppressions API
 
 Manage email suppressions to maintain sending reputation.
