@@ -243,6 +243,21 @@ $logs = $logsApi->getLogsByDateRange('example.com', $startDate, $endDate);
 $logs = $logsApi->getLogsBySender('example.com', 'sender@example.com');
 $logs = $logsApi->getLogsByRecipient('example.com', 'recipient@example.com');
 
+// Filter by event type (queued, delivered, bounced, failed, opened, clicked, unsubscribed, etc.)
+use KirimEmail\Smtp\Model\LogEntry;
+$logs = $logsApi->getLogsByEventType('example.com', LogEntry::SMTP_EVENT_DELIVERED);
+
+// Filter by tags (partial match)
+$logs = $logsApi->getLogsByTags('example.com', 'newsletter');
+
+// Combine filters with additional parameters
+$logs = $logsApi->getLogs('example.com', [
+    'event_type' => 'bounced',
+    'tags' => 'marketing',
+    'start' => (new \DateTime('-30 days'))->format('c'),
+    'limit' => 100
+]);
+
 // Get logs for a specific message
 $logs = $logsApi->getMessageLogs('example.com', 'message-guid-here');
 
@@ -438,6 +453,19 @@ echo $log->getMessageGuid();         // message GUID
 echo $log->isDelivered();            // true/false
 echo $log->isOpened();               // true/false
 echo $log->getTimestampDateTime()->format('Y-m-d H:i:s');
+
+// Event type constants
+LogEntry::SMTP_EVENT_QUEUED;         // 'queued'
+LogEntry::SMTP_EVENT_SEND;           // 'send'
+LogEntry::SMTP_EVENT_DELIVERED;      // 'delivered'
+LogEntry::SMTP_EVENT_BOUNCED;        // 'bounced'
+LogEntry::SMTP_EVENT_FAILED;         // 'failed'
+LogEntry::SMTP_EVENT_PERMANENT_FAIL; // 'permanent_fail'
+LogEntry::SMTP_EVENT_OPENED;         // 'opened'
+LogEntry::SMTP_EVENT_CLICKED;        // 'clicked'
+LogEntry::SMTP_EVENT_UNSUBSCRIBED;   // 'unsubscribed'
+LogEntry::SMTP_EVENT_TEMP_FAILURE;   // 'temp_fail'
+LogEntry::SMTP_EVENT_DEFERRED;       // 'deferred'
 ```
 
 ### Suppression Model
@@ -623,6 +651,13 @@ This project is licensed under the MIT License. See the LICENSE file for details
 - **Website**: https://kirim.email
 
 ## Changelog
+
+### Version 1.3.0
+- Added `event_type` and `tags` filter support for log retrieval
+- Added `getLogsByEventType()` method to LogsApi
+- Added `getLogsByTags()` method to LogsApi
+- Added validation for event_type parameter in LogsApi
+- Added event type constants to LogEntry model
 
 ### Version 1.0.0
 - Initial release

@@ -22,7 +22,7 @@ class LogsApi
      * Get domain logs
      *
      * @param string $domain Domain name
-     * @param array $params Query parameters (start, end, sender, recipient, limit, offset)
+     * @param array $params Query parameters (start, end, sender, recipient, subject, event_type, tags, limit, offset)
      * @return array{data: LogEntry[], count: int, offset: int, limit: int, pagination: Pagination}
      * @throws ApiException
      * @see LogEntry For available event type constants (SMTP_EVENT_QUEUED, SMTP_EVENT_DELIVERED, etc.)
@@ -75,7 +75,7 @@ class LogsApi
      * Stream logs in real-time (Server-Sent Events)
      *
      * @param string $domain Domain name
-     * @param array $params Query parameters (start, end, sender, recipient, limit)
+     * @param array $params Query parameters (start, end, sender, recipient, subject, event_type, tags, limit)
      * @return \Generator<LogEntry>
      * @throws ApiException
      * @see LogEntry For available event type constants (SMTP_EVENT_QUEUED, SMTP_EVENT_DELIVERED, etc.)
@@ -152,6 +152,43 @@ class LogsApi
         return $this->getLogs($domain, $params);
     }
 
+    /**
+     * Get logs filtered by event type
+     *
+     * @param string $domain Domain name
+     * @param string $eventType Event type (use LogEntry constants like SMTP_EVENT_DELIVERED, SMTP_EVENT_BOUNCED, etc.)
+     * @param array $additionalParams Additional parameters
+     * @return array{data: LogEntry[], count: int, offset: int, limit: int, pagination: Pagination}
+     * @throws ApiException
+     * @see LogEntry For available event type constants
+     */
+    public function getLogsByEventType(string $domain, string $eventType, array $additionalParams = []): array
+    {
+        $params = array_merge($additionalParams, [
+            'event_type' => $eventType,
+        ]);
+
+        return $this->getLogs($domain, $params);
+    }
+
+    /**
+     * Get logs filtered by tags
+     *
+     * @param string $domain Domain name
+     * @param string $tags Tags to filter by (partial match)
+     * @param array $additionalParams Additional parameters
+     * @return array{data: LogEntry[], count: int, offset: int, limit: int, pagination: Pagination}
+     * @throws ApiException
+     */
+    public function getLogsByTags(string $domain, string $tags, array $additionalParams = []): array
+    {
+        $params = array_merge($additionalParams, [
+            'tags' => $tags,
+        ]);
+
+        return $this->getLogs($domain, $params);
+    }
+
 
     /**
      * Validate log parameters
@@ -196,6 +233,28 @@ class LogsApi
             $offset = (int) $params['offset'];
             if ($offset < 0) {
                 throw new ApiException("Offset must be greater than or equal to 0.");
+            }
+        }
+
+        // Validate event_type
+        if (isset($params['event_type'])) {
+            $validEventTypes = [
+                LogEntry::SMTP_EVENT_QUEUED,
+                LogEntry::SMTP_EVENT_SEND,
+                LogEntry::SMTP_EVENT_DELIVERED,
+                LogEntry::SMTP_EVENT_BOUNCED,
+                LogEntry::SMTP_EVENT_FAILED,
+                LogEntry::SMTP_EVENT_PERMANENT_FAIL,
+                LogEntry::SMTP_EVENT_OPENED,
+                LogEntry::SMTP_EVENT_CLICKED,
+                LogEntry::SMTP_EVENT_UNSUBSCRIBED,
+                LogEntry::SMTP_EVENT_TEMP_FAILURE,
+                LogEntry::SMTP_EVENT_DEFERRED,
+            ];
+            if (!in_array($params['event_type'], $validEventTypes, true)) {
+                throw new ApiException(
+                    "Invalid event_type. Valid values are: " . implode(', ', $validEventTypes)
+                );
             }
         }
     }

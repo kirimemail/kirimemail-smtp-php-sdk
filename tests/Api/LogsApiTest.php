@@ -187,6 +187,59 @@ class LogsApiTest extends TestCase
         $this->assertCount(1, $result['data']);
     }
 
+    public function testGetLogsByEventType()
+    {
+        $mockResponse = [
+            'data' => [
+                [
+                    'id' => 7,
+                    'event_type' => 'bounced',
+                    'message_guid' => 'msg-guid-444',
+                    'timestamp' => 1640995800
+                ]
+            ],
+            'count' => 1
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->with('/api/domains/example.com/log', ['event_type' => 'bounced'])
+            ->willReturn($mockResponse);
+
+        $result = $this->logsApi->getLogsByEventType('example.com', 'bounced');
+
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result['data']);
+        $this->assertEquals('bounced', $result['data'][0]->getEventType());
+    }
+
+    public function testGetLogsByTags()
+    {
+        $mockResponse = [
+            'data' => [
+                [
+                    'id' => 8,
+                    'event_type' => 'delivered',
+                    'message_guid' => 'msg-guid-555',
+                    'tags' => 'newsletter,marketing',
+                    'timestamp' => 1640995900
+                ]
+            ],
+            'count' => 1
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->with('/api/domains/example.com/log', ['tags' => 'newsletter'])
+            ->willReturn($mockResponse);
+
+        $result = $this->logsApi->getLogsByTags('example.com', 'newsletter');
+
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result['data']);
+        $this->assertEquals('newsletter,marketing', $result['data'][0]->getTags());
+    }
+
     
     public function testStreamLogs()
     {
@@ -285,6 +338,18 @@ class LogsApiTest extends TestCase
             ->method('get');
 
         $this->logsApi->getLogs('example.com', ['offset' => -1]);
+    }
+
+    public function testGetLogsWithEventTypeValidation()
+    {
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Invalid event_type. Valid values are:');
+
+        // The validation happens in the API class before calling the client
+        $this->mockClient->expects($this->never())
+            ->method('get');
+
+        $this->logsApi->getLogs('example.com', ['event_type' => 'invalid_type']);
     }
 
     public function testGetLogsThrowsException()
