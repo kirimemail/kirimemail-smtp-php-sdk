@@ -101,12 +101,12 @@ class CredentialsApi
      *
      * @param string $domain Domain name
      * @param string $credential Credential ID
-     * @return array{success: bool, message: string}
+     * @return void
      * @throws ApiException
      */
-    public function deleteCredential(string $domain, string $credential): array
+    public function deleteCredential(string $domain, string $credential): void
     {
-        return $this->client->delete("/api/domains/{$domain}/credentials/{$credential}");
+        $this->client->delete("/api/domains/{$domain}/credentials/{$credential}");
     }
 
     /**

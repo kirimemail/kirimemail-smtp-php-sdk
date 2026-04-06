@@ -147,7 +147,6 @@ class DomainsApiTest extends TestCase
     {
         $mockResponse = [
             'success' => true,
-            'message' => 'Domain deleted successfully'
         ];
 
         $this->mockClient->expects($this->once())
@@ -155,10 +154,7 @@ class DomainsApiTest extends TestCase
             ->with('/api/domains/delete.com')
             ->willReturn($mockResponse);
 
-        $result = $this->domainsApi->deleteDomain('delete.com');
-
-        $this->assertTrue($result['success']);
-        $this->assertEquals('Domain deleted successfully', $result['message']);
+        $this->domainsApi->deleteDomain('delete.com');
     }
 
     public function testSetupAuthDomain()

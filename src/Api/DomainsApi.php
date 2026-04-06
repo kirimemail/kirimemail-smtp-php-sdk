@@ -99,12 +99,12 @@ class DomainsApi
      * Delete a domain
      *
      * @param string $domain Domain name
-     * @return array{success: bool, message: string}
+     * @return void
      * @throws ApiException
      */
-    public function deleteDomain(string $domain): array
+    public function deleteDomain(string $domain): void
     {
-        return $this->client->delete("/api/domains/{$domain}");
+        $this->client->delete("/api/domains/{$domain}");
     }
 
     /**
@@ -171,5 +171,29 @@ class DomainsApi
     public function verifyTracklink(string $domain): array
     {
         return $this->client->post("/api/domains/{$domain}/verify-tracklink");
+    }
+
+    /**
+     * Delete authentication domain
+     *
+     * @param string $domain Domain name
+     * @return void
+     * @throws ApiException
+     */
+    public function deleteAuthDomain(string $domain): void
+    {
+        $this->client->delete("/api/domains/{$domain}/auth-domain");
+    }
+
+    /**
+     * Delete tracking domain
+     *
+     * @param string $domain Domain name
+     * @return void
+     * @throws ApiException
+     */
+    public function deleteTrackingDomain(string $domain): void
+    {
+        $this->client->delete("/api/domains/{$domain}/tracklink");
     }
 }

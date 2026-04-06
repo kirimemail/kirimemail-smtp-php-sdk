@@ -119,12 +119,12 @@ class WebhooksApi
      *
      * @param string $domain Domain name
      * @param string $webhookGuid Webhook GUID
-     * @return array{success: bool, message: string}
+     * @return void
      * @throws ApiException
      */
-    public function deleteWebhook(string $domain, string $webhookGuid): array
+    public function deleteWebhook(string $domain, string $webhookGuid): void
     {
-        return $this->client->delete("/api/domains/{$domain}/webhooks/{$webhookGuid}");
+        $this->client->delete("/api/domains/{$domain}/webhooks/{$webhookGuid}");
     }
 
     /**

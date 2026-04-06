@@ -170,12 +170,12 @@ class SuppressionsApi
      *
      * @param string $domain Domain name
      * @param array $ids Array of suppression IDs to delete
-     * @return array{success: bool, message: string, deleted_count: int}
+     * @return void
      * @throws ApiException
      */
-    public function deleteUnsubscribeSuppressions(string $domain, array $ids): array
+    public function deleteUnsubscribeSuppressions(string $domain, array $ids): void
     {
-        return $this->deleteSuppressions($domain, 'unsubscribes', $ids);
+        $this->deleteSuppressions($domain, 'unsubscribes', $ids);
     }
 
     /**
@@ -183,12 +183,12 @@ class SuppressionsApi
      *
      * @param string $domain Domain name
      * @param array $ids Array of suppression IDs to delete
-     * @return array{success: bool, message: string, deleted_count: int}
+     * @return void
      * @throws ApiException
      */
-    public function deleteBounceSuppressions(string $domain, array $ids): array
+    public function deleteBounceSuppressions(string $domain, array $ids): void
     {
-        return $this->deleteSuppressions($domain, 'bounces', $ids);
+        $this->deleteSuppressions($domain, 'bounces', $ids);
     }
 
     /**
@@ -196,12 +196,12 @@ class SuppressionsApi
      *
      * @param string $domain Domain name
      * @param array $ids Array of suppression IDs to delete
-     * @return array{success: bool, message: string, deleted_count: int}
+     * @return void
      * @throws ApiException
      */
-    public function deleteWhitelistSuppressions(string $domain, array $ids): array
+    public function deleteWhitelistSuppressions(string $domain, array $ids): void
     {
-        return $this->deleteSuppressions($domain, 'whitelist', $ids);
+        $this->deleteSuppressions($domain, 'whitelist', $ids);
     }
 
     /**
@@ -242,21 +242,15 @@ class SuppressionsApi
      * @param string $domain Domain name
      * @param string $type Suppression type endpoint (unsubscribes, bounces, whitelist)
      * @param array $ids Array of suppression IDs to delete
-     * @return array{success: bool, message: string, deleted_count: int}
+     * @return void
      * @throws ApiException
      */
-    private function deleteSuppressions(string $domain, string $type, array $ids): array
+    private function deleteSuppressions(string $domain, string $type, array $ids): void
     {
         $this->validateSuppressionIds($ids);
 
         $data = ['ids' => $ids];
-        $response = $this->client->delete("/api/domains/{$domain}/suppressions/{$type}", [], $data);
-
-        return [
-            'success' => true,
-            'message' => $response['message'] ?? 'Suppressions deleted successfully.',
-            'deleted_count' => $response['deleted_count'] ?? count($ids),
-        ];
+        $this->client->deleteWithBody("/api/domains/{$domain}/suppressions/{$type}", $data);
     }
 
     /**

@@ -128,6 +128,14 @@ class SmtpClient
         ]);
     }
 
+    public function deleteWithBody(string $endpoint, array $data = [], array $headers = []): array
+    {
+        return $this->request('DELETE', $endpoint, [
+            'json' => $data,
+            'headers' => $headers,
+        ]);
+    }
+
     public function request(string $method, string $endpoint, array $options = []): array
     {
         $options = $this->addAuthenticationHeaders($options, $endpoint);

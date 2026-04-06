@@ -131,7 +131,6 @@ class CredentialsApiTest extends TestCase
     {
         $mockResponse = [
             'success' => true,
-            'message' => 'Credential deleted successfully'
         ];
 
         $this->mockClient->expects($this->once())
@@ -139,10 +138,7 @@ class CredentialsApiTest extends TestCase
             ->with('/api/domains/example.com/credentials/4')
             ->willReturn($mockResponse);
 
-        $result = $this->credentialsApi->deleteCredential('example.com', '4');
-
-        $this->assertTrue($result['success']);
-        $this->assertEquals('Credential deleted successfully', $result['message']);
+        $this->credentialsApi->deleteCredential('example.com', '4');
     }
 
     public function testResetPassword()
