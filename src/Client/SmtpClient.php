@@ -87,23 +87,45 @@ class SmtpClient
             }
         }
 
-        // Add files
-        foreach ($files as $key => $file) {
+        // Add files with attachment[] naming
+        foreach ($files as $file) {
             if (is_array($file)) {
-                foreach ($file as $index => $filePath) {
+                foreach ($file as $filePath) {
                     $multipart[] = [
-                        'name' => $key . '[' . $index . ']',
-                        'contents' => fopen($filePath, 'r'),
-                        'filename' => basename($filePath),
+                        'name' => 'attachment[]',
+                        'contents' => $this->getFileContents($filePath),
+                        'filename' => $this->getFilename($filePath),
                     ];
                 }
             } else {
                 $multipart[] = [
-                    'name' => $key,
-                    'contents' => fopen($file, 'r'),
-                    'filename' => basename($file),
+                    'name' => 'attachment[]',
+                    'contents' => $this->getFileContents($file),
+                    'filename' => $this->getFilename($file),
                 ];
             }
+        }
+
+        private function getFileContents($file): mixed
+        {
+            if (is_resource($file) || $file instanceof \SplFileInfo) {
+                return $file;
+            }
+            if (is_string($file) && file_exists($file)) {
+                return fopen($file, 'r');
+            }
+            return $file;
+        }
+
+        private function getFilename($file): string
+        {
+            if (is_string($file) && file_exists($file)) {
+                return basename($file);
+            }
+            if ($file instanceof \SplFileInfo) {
+                return $file->getBasename();
+            }
+            return 'file';
         }
 
         return $this->request('POST', $endpoint, [
