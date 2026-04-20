@@ -14,19 +14,19 @@ class KirimEmailServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/kirimemail.php',
-            'kirimemail'
+            __DIR__ . "/../../config/kirimemail.php",
+            "kirimemail",
         );
 
         $this->app->singleton(SmtpClient::class, function ($app) {
-            $config = $app['config']['kirimemail'];
+            $config = $app["config"]["kirimemail"];
 
             return new SmtpClient(
-                $config['username'] ?? null,
-                $config['token'] ?? null,
-                $config['domain_api_key'] ?? null,
-                $config['domain_api_secret'] ?? null,
-                $config['base_url'] ?? 'https://smtp-app.kirim.email'
+                $config["username"] ?? null,
+                $config["token"] ?? null,
+                $config["domain_api_key"] ?? null,
+                $config["domain_api_secret"] ?? null,
+                $config["base_url"] ?? "https://smtp-app.kirim.email",
             );
         });
 
@@ -35,25 +35,32 @@ class KirimEmailServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(KirimEmailTransport::class, function ($app) {
-            $config = $app['config']['kirimemail'];
+            $config = $app["config"]["kirimemail"];
 
             return new KirimEmailTransport(
                 $app->make(MessagesApi::class),
-                $config['domain'] ?? ''
+                $config["domain"] ?? "",
             );
         });
     }
 
     public function boot(): void
     {
-        if ($this->app->bound('mail.manager')) {
-            $this->app->make('mail.manager')->extend('kirimemail', function ($app) {
-                return $app->make(KirimEmailTransport::class);
-            });
+        if ($this->app->bound("mail.manager")) {
+            $this->app
+                ->make("mail.manager")
+                ->extend("kirimemail", function ($app) {
+                    return $app->make(KirimEmailTransport::class);
+                });
         }
 
-        $this->publishes([
-            __DIR__ . '/../config/kirimemail.php' => config_path('kirimemail.php'),
-        ], 'kirimemail-config');
+        $this->publishes(
+            [
+                __DIR__ . "/../config/kirimemail.php" => config_path(
+                    "kirimemail.php",
+                ),
+            ],
+            "kirimemail-config",
+        );
     }
 }
