@@ -16,6 +16,7 @@ A comprehensive PHP SDK for integrating with the KirimEmail SMTP API. This SDK p
 - PHP 7.4 or higher (PHP 8.0+ recommended)
 - Guzzle HTTP Client 7.0+
 - JSON PHP Extension
+- **For Laravel integration**: Laravel 7.0+, Symfony Mailer 5.0+, League HTML-to-Markdown 5.0+
 
 ## Installation
 
@@ -60,6 +61,211 @@ $result = $messagesApi->sendMessage('example.com', [
 if ($result['success']) {
     echo "Email sent successfully!\n";
 }
+```
+
+## Laravel Integration
+
+The SDK includes a Laravel Service Provider for seamless integration with Laravel's mail system.
+
+### Installation
+
+The service provider is automatically discovered by Laravel when you install the package via Composer:
+
+```bash
+composer require kirimemail/smtp-sdk
+```
+
+### Configuration
+
+1. **Publish the configuration file**:
+
+```bash
+php artisan vendor:publish --tag=kirimemail-config
+```
+
+This will create `config/kirimemail.php` with the following options:
+
+```php
+<?php
+
+return [
+    'username' => env('KIRIMEMAIL_USERNAME'),
+    'token' => env('KIRIMEMAIL_TOKEN'),
+    'domain_api_key' => env('KIRIMEMAIL_DOMAIN_API_KEY'),
+    'domain_api_secret' => env('KIRIMEMAIL_DOMAIN_API_SECRET'),
+    'domain' => env('KIRIMEMAIL_DOMAIN'),
+    'base_url' => env('KIRIMEMAIL_BASE_URL', 'https://smtp-app.kirim.email'),
+];
+```
+
+2. **Add environment variables to your `.env` file**:
+
+```env
+KIRIMEMAIL_USERNAME=your_username
+KIRIMEMAIL_TOKEN=your_token
+KIRIMEMAIL_DOMAIN=your_domain.com
+```
+
+3. **Configure Laravel mail driver** in `config/mail.php`:
+
+```php
+<?php
+
+return [
+    // ... other mail config
+
+    'mailers' => [
+        'smtp' => [
+            'transport' => 'smtp',
+            // ... your existing SMTP config
+        ],
+
+        // Add the KirimEmail mailer
+        'kirimemail' => [
+            'transport' => 'kirimemail',
+        ],
+    ],
+
+    'from' => [
+        'address' => 'noreply@example.com',
+        'name' => 'Your Application Name',
+    ],
+];
+```
+
+4. **Set the default mailer** (optional) in `config/mail.php`:
+
+```php
+'default' => env('MAIL_MAILER', 'kirimemail'),
+```
+
+Or per-environment in `.env`:
+
+```env
+MAIL_MAILER=kirimemail
+```
+
+### Usage
+
+#### Using the Mail Facade
+
+```php
+use Illuminate\Support\Facades\Mail;
+
+// Simple email
+Mail::to('recipient@example.com')
+    ->send(new \App\Mail\TestEmail());
+
+// With data
+Mail::to('recipient@example.com')
+    ->cc('cc@example.com')
+    ->bcc('bcc@example.com')
+    ->send(new \App\Mail\OrderShipped($order));
+
+// Using the raw method
+Mail::raw('Hello World', function ($message) {
+    $message->to('recipient@example.com')
+            ->subject('Test Subject');
+});
+
+// Using the html method
+Mail::html('<h1>Hello World</h1><p>This is an HTML email.</p>', function ($message) {
+    $message->to('recipient@example.com')
+            ->subject('HTML Email Test');
+});
+```
+
+#### Using Helper Functions
+
+The SDK provides helper functions for direct access to the client and API:
+
+```php
+// Get the SMTP client
+$client = kirimemail_client();
+
+// Get the messages API
+$messagesApi = kirimemail_messages();
+
+// Send email directly
+$result = kirimemail_messages()->sendMessage('example.com', [
+    'from' => 'sender@example.com',
+    'to' => 'recipient@example.com',
+    'subject' => 'Hello from KirimEmail',
+    'text' => 'This is a test email.',
+    'html' => '<h1>Hello</h1><p>This is an HTML email.</p>',
+]);
+```
+
+### Creating Mailable Classes
+
+```php
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Mail\Mailable;
+use Illuminate\Contracts\Mail\Mailable as MailableContract;
+
+class WelcomeEmail extends Mailable implements MailableContract
+{
+    public $user;
+
+    public function __construct($user)
+    {
+        $this->user = $user;
+    }
+
+    public function build()
+    {
+        return $this->subject('Welcome to Our Application')
+                    ->view('emails.welcome')
+                    ->with([
+                        'name' => $this->user->name,
+                        'email' => $this->user->email,
+                    ]);
+    }
+}
+```
+
+### Sending with Attachments
+
+```php
+use Illuminate\Support\Facades\Mail;
+
+Mail::to('recipient@example.com')
+    ->send(new \App\Mail\InvoiceEmail($invoice));
+
+// Or with inline attachments
+Mail::to('recipient@example.com')
+    ->send(new \App\Mail\ReportEmail($report)
+        ->attach(storage_path('app/reports/monthly.pdf'))
+    );
+```
+
+### Error Handling
+
+```php
+use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Exception\TransportException;
+
+try {
+    Mail::to('recipient@example.com')
+        ->send(new \App\Mail\TestEmail());
+} catch (TransportException $e) {
+    Log::error('KirimEmail error: ' . $e->getMessage());
+}
+```
+
+### Manual Service Provider Registration
+
+If auto-discovery doesn't work, manually register the service provider in `config/app.php`:
+
+```php
+'providers' => [
+    // ... other providers
+
+    KirimEmail\Smtp\Laravel\KirimEmailServiceProvider::class,
+],
 ```
 
 ## Authentication
@@ -649,20 +855,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 - **Issues**: [GitHub Issues](https://github.com/kirimemail/kirimemail-smtp-php-sdk/issues)
 - **Email**: support@kirim.email
 - **Website**: https://kirim.email
-
-## Changelog
-
-### Version 1.3.0
-- Added `event_type` and `tags` filter support for log retrieval
-- Added `getLogsByEventType()` method to LogsApi
-- Added `getLogsByTags()` method to LogsApi
-- Added validation for event_type parameter in LogsApi
-- Added event type constants to LogEntry model
-
-### Version 1.0.0
-- Initial release
-- Full API coverage for domains, credentials, messages, logs, and suppressions
-- File upload support with validation
-- Real-time log streaming
-- Comprehensive error handling
-- Rich data models and pagination support

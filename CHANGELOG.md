@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-20
+
+### Added
+- Laravel Service Provider (`KirimEmail\Smtp\Laravel\KirimEmailServiceProvider`)
+- Laravel Mail Transport (`KirimEmail\Smtp\Laravel\KirimEmailTransport`)
+- Symfony Mailer integration for Laravel mail system
+- Auto-discovery support for Laravel packages
+- Helper functions (`kirimemail_client()`, `kirimemail_messages()`)
+- Config file publishing support
+
+### Changed
+- Added `symfony/mailer` and `league/html-to-markdown` as dependencies
+
 ## [1.3.0] - 2026-03-29
 
 ### Added
