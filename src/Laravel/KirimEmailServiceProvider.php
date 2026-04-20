@@ -49,9 +49,9 @@ class KirimEmailServiceProvider extends ServiceProvider
         if ($this->app->bound("mail.manager")) {
             $this->app
                 ->make("mail.manager")
-                ->extend("kirimemail", function ($config) {
+                ->extend("kirimemail", function ($config) use ($app) {
                     return new KirimEmailTransport(
-                        app(MessagesApi::class),
+                        $app->make(MessagesApi::class),
                         $config["domain"] ?? "",
                     );
                 });
