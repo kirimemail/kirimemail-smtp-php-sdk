@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace KirimEmail\Smtp\Laravel;
 
-use Illuminate\Mail\Transport\Transport;
-use Illuminate\Support\Facades\Log;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
 use KirimEmail\Smtp\Api\MessagesApi;
 use League\HTMLToMarkdown\HtmlConverter;
 use Symfony\Component\Mailer\Envelope;
@@ -15,33 +14,30 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\MessageConverter;
 
-class KirimEmailTransport extends Transport
+class KirimEmailTransport extends AbstractTransport
 {
-    protected string $domain;
-    protected MessagesApi $messagesApi;
-
     public function __construct(
-        MessagesApi $messagesApi,
-        string $domain
+        protected MessagesApi $messagesApi,
+        protected string $domain,
     ) {
-        $this->messagesApi = $messagesApi;
-        $this->domain = $domain;
+        parent::__construct();
     }
 
-    public function send(SentMessage $message, Envelope $envelope = null): SentMessage
-    {
-        $envelope = $envelope ?? SentMessage::create($message->getOriginalMessage())->getEnvelope();
-
-        $this->doSend($message, $envelope);
-
-        return $message;
-    }
-
-    protected function doSend(SentMessage $message, Envelope $envelope): void
+    protected function doSend(SentMessage $message): void
     {
         $email = MessageConverter::toEmail($message->getOriginalMessage());
+        $envelope = $message->getEnvelope();
 
-        $headersToBypass = ['from', 'to', 'cc', 'bcc', 'reply-to', 'sender', 'subject', 'content-type'];
+        $headersToBypass = [
+            "from",
+            "to",
+            "cc",
+            "bcc",
+            "reply-to",
+            "sender",
+            "subject",
+            "content-type",
+        ];
 
         $headers = [];
         foreach ($email->getHeaders()->all() as $name => $header) {
@@ -55,14 +51,25 @@ class KirimEmailTransport extends Transport
         if ($email->getAttachments()) {
             foreach ($email->getAttachments() as $attachment) {
                 $attachmentHeaders = $attachment->getPreparedHeaders();
-                $contentType = $attachmentHeaders->get('Content-Type')->getBody();
-                $disposition = $attachmentHeaders->getHeaderBody('Content-Disposition');
-                $filename = $attachmentHeaders->getHeaderParameter('Content-Disposition', 'filename');
+                $contentType = $attachmentHeaders
+                    ->get("Content-Type")
+                    ->getBody();
+                $disposition = $attachmentHeaders->getHeaderBody(
+                    "Content-Disposition",
+                );
+                $filename = $attachmentHeaders->getHeaderParameter(
+                    "Content-Disposition",
+                    "filename",
+                );
 
                 $attachments[] = [
-                    'content_type' => $contentType,
-                    'content' => str_replace("\r\n", '', $attachment->bodyToString()),
-                    'filename' => $filename,
+                    "content_type" => $contentType,
+                    "content" => str_replace(
+                        "\r\n",
+                        "",
+                        $attachment->bodyToString(),
+                    ),
+                    "filename" => $filename,
                 ];
             }
         }
@@ -84,69 +91,82 @@ class KirimEmailTransport extends Transport
         }
 
         $data = [
-            'from' => $fromAddress,
-            'to' => $this->stringifyAddresses($this->getRecipients($email, $envelope)),
-            'subject' => $email->getSubject(),
-            'text' => $textBody ?: ' ',
-            'html' => $htmlBody ?: '',
+            "from" => $fromAddress,
+            "to" => $this->stringifyAddresses(
+                $this->getRecipients($email, $envelope),
+            ),
+            "subject" => $email->getSubject(),
+            "text" => $textBody ?: " ",
+            "html" => $htmlBody ?: "",
         ];
 
         if ($fromName) {
-            $data['from_name'] = $fromName;
+            $data["from_name"] = $fromName;
         }
 
         $cc = $this->stringifyAddresses($email->getCc());
         if ($cc) {
-            $data['cc'] = $cc;
+            $data["cc"] = $cc;
         }
 
         $bcc = $this->stringifyAddresses($email->getBcc());
         if ($bcc) {
-            $data['bcc'] = $bcc;
+            $data["bcc"] = $bcc;
         }
 
         $replyTo = $this->stringifyAddresses($email->getReplyTo());
         if ($replyTo) {
-            $data['reply_to'] = $replyTo;
+            $data["reply_to"] = $replyTo;
         }
 
         if ($headers) {
-            $data['headers'] = $headers;
+            $data["headers"] = $headers;
         }
 
         try {
             $result = $this->messagesApi->sendMessage(
                 $this->domain,
                 $data,
-                $attachments
+                $attachments,
             );
 
-            if (!$result['success']) {
-                throw new TransportException($result['message'] ?? 'Failed to send email via KirimEmail');
+            if (!$result["success"]) {
+                throw new TransportException(
+                    $result["message"] ?? "Failed to send email via KirimEmail",
+                );
             }
         } catch (\Throwable $exception) {
-            $errorMessage = $exception->getMessage();
+            $message = $exception->getMessage();
 
-            if (method_exists($exception, 'getErrors') && $exception->getErrors()) {
-                $errorMessage .= ' Errors: ' . json_encode($exception->getErrors());
+            if (
+                method_exists($exception, "getErrors") &&
+                $exception->getErrors()
+            ) {
+                $message .= " Errors: " . json_encode($exception->getErrors());
             }
 
             throw new TransportException(
-                sprintf('KirimEmail API failed. Reason: %s.', $errorMessage),
+                sprintf("KirimEmail API failed. Reason: %s.", $message),
                 is_int($exception->getCode()) ? $exception->getCode() : 0,
-                $exception
+                $exception,
             );
         }
     }
 
     protected function getRecipients(Email $email, Envelope $envelope): array
     {
-        return array_filter($envelope->getRecipients(), function (Address $address) use ($email) {
-            return in_array($address, array_merge($email->getCc(), $email->getBcc()), true) === false;
+        return array_filter($envelope->getRecipients(), function (
+            Address $address,
+        ) use ($email) {
+            return in_array(
+                $address,
+                array_merge($email->getCc(), $email->getBcc()),
+                true,
+            ) === false;
         });
     }
 
-    protected function stringifyAddresses(array $addresses): array|string
+    protected function stringifyAddresses(array $addresses): array
     {
         if (empty($addresses)) {
             return [];
@@ -158,5 +178,10 @@ class KirimEmailTransport extends Transport
             }
             return (string) $address;
         }, $addresses);
+    }
+
+    public function __toString(): string
+    {
+        return "kirimemail";
     }
 }

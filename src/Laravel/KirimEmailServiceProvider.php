@@ -49,14 +49,17 @@ class KirimEmailServiceProvider extends ServiceProvider
         if ($this->app->bound("mail.manager")) {
             $this->app
                 ->make("mail.manager")
-                ->extend("kirimemail", function ($app) {
-                    return $app->make(KirimEmailTransport::class);
+                ->extend("kirimemail", function ($config) {
+                    return new KirimEmailTransport(
+                        app(MessagesApi::class),
+                        $config["domain"] ?? "",
+                    );
                 });
         }
 
         $this->publishes(
             [
-                __DIR__ . "/../config/kirimemail.php" => config_path(
+                __DIR__ . "/../../config/kirimemail.php" => config_path(
                     "kirimemail.php",
                 ),
             ],
