@@ -61,7 +61,8 @@ class KirimEmailTransport extends AbstractTransport
 
                 $attachments[] = [
                     "filename" => $filename,
-                    "contents" => $attachment->bodyToString(),
+                    "contents" => $attachment->getBody(),
+                    "content_type" => $contentType,
                 ];
             }
         }
