@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . "/../vendor/autoload.php";
 
 use KirimEmail\Smtp\Client\SmtpClient;
 use KirimEmail\Smtp\Api\DomainsApi;
@@ -16,9 +16,9 @@ use KirimEmail\Smtp\Exception\AuthenticationException;
 use KirimEmail\Smtp\Exception\ValidationException;
 
 // Example configuration
-$username = 'your_username';
-$token = 'your_token';
-$domain = 'example.com';
+$username = "your_username";
+$token = "your_token";
+$domain = "example.com";
 
 try {
     // Initialize the client
@@ -42,13 +42,16 @@ try {
 
     // List domains
     try {
-        $domains = $domainsApi->listDomains(['limit' => 5]);
-        echo "✓ Listed " . count($domains['data']) . " domains\n";
+        $domains = $domainsApi->listDomains(["limit" => 5]);
+        echo "✓ Listed " . count($domains["data"]) . " domains\n";
 
-        if (!empty($domains['data'])) {
-            $firstDomain = $domains['data'][0];
-            echo "  First domain: " . $firstDomain->getDomain() .
-                 " (Verified: " . ($firstDomain->isVerified() ? 'Yes' : 'No') . ")\n";
+        if (!empty($domains["data"])) {
+            $firstDomain = $domains["data"][0];
+            echo "  First domain: " .
+                $firstDomain->getDomain() .
+                " (Verified: " .
+                ($firstDomain->isVerified() ? "Yes" : "No") .
+                ")\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to list domains: " . $e->getMessage() . "\n";
@@ -56,8 +59,10 @@ try {
 
     // Create a new domain
     try {
-        $result = $domainsApi->createDomain('test.example.com', 2048);
-        echo "✓ Created domain: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        $result = $domainsApi->createDomain("test.example.com", 2048);
+        echo "✓ Created domain: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to create domain: " . $e->getMessage() . "\n";
     }
@@ -65,7 +70,9 @@ try {
     // Get domain details
     try {
         $domainInfo = $domainsApi->getDomain($domain);
-        echo "✓ Got domain details for: " . $domainInfo['data']->getDomain() . "\n";
+        echo "✓ Got domain details for: " .
+            $domainInfo["data"]->getDomain() .
+            "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to get domain details: " . $e->getMessage() . "\n";
     }
@@ -78,12 +85,18 @@ try {
 
     // List credentials
     try {
-        $credentials = $credentialsApi->listCredentials($domain, ['limit' => 5]);
-        echo "✓ Listed " . count($credentials['data']) . " credentials for domain: {$domain}\n";
+        $credentials = $credentialsApi->listCredentials($domain, [
+            "limit" => 5,
+        ]);
+        echo "✓ Listed " .
+            count($credentials["data"]) .
+            " credentials for domain: {$domain}\n";
 
-        if (!empty($credentials['data'])) {
-            $firstCredential = $credentials['data'][0];
-            echo "  First credential: " . $firstCredential->getUsername() . "\n";
+        if (!empty($credentials["data"])) {
+            $firstCredential = $credentials["data"][0];
+            echo "  First credential: " .
+                $firstCredential->getUsername() .
+                "\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to list credentials: " . $e->getMessage() . "\n";
@@ -91,14 +104,21 @@ try {
 
     // Create a new credential
     try {
-        $result = $credentialsApi->createCredential($domain, 'test_user_' . time());
-        echo "✓ Created credential: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        $result = $credentialsApi->createCredential(
+            $domain,
+            "test_user_" . time(),
+        );
+        echo "✓ Created credential: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
 
-        if ($result['success'] && isset($result['data']['credential'])) {
-            $credential = $result['data']['credential'];
+        if ($result["success"] && isset($result["data"]["credential"])) {
+            $credential = $result["data"]["credential"];
             echo "  Username: " . $credential->getUsername() . "\n";
             echo "  Generated password: " . $credential->getPassword() . "\n";
-            echo "  Remote synced: " . ($credential->isRemoteSynced() ? 'Yes' : 'No') . "\n";
+            echo "  Remote synced: " .
+                ($credential->isRemoteSynced() ? "Yes" : "No") .
+                "\n";
             echo "  IMPORTANT: Store this password securely as it cannot be retrieved later!\n";
         }
     } catch (ApiException $e) {
@@ -114,15 +134,18 @@ try {
     // Send a simple email
     try {
         $emailData = [
-            'from' => 'sender@' . $domain,
-            'to' => 'recipient@example.com',
-            'subject' => 'Test Email from PHP SDK',
-            'text' => "Hello!\n\nThis is a test email sent using the KirimEmail PHP SDK.\n\nBest regards,\nPHP SDK"
+            "from" => "sender@" . $domain,
+            "to" => "recipient@example.com",
+            "subject" => "Test Email from PHP SDK",
+            "text" =>
+                "Hello!\n\nThis is a test email sent using the KirimEmail PHP SDK.\n\nBest regards,\nPHP SDK",
         ];
 
         $result = $messagesApi->sendMessage($domain, $emailData);
-        echo "✓ Sent email: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
-        echo "  Message: " . ($result['message'] ?? 'No message') . "\n";
+        echo "✓ Sent email: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
+        echo "  Message: " . ($result["message"] ?? "No message") . "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to send email: " . $e->getMessage() . "\n";
     }
@@ -130,33 +153,42 @@ try {
     // Send email with attachment
     try {
         $emailData = [
-            'from' => 'sender@' . $domain,
-            'to' => 'recipient@example.com',
-            'subject' => 'Email with Attachment',
-            'text' => "Please see the attached file."
+            "from" => "sender@" . $domain,
+            "to" => "recipient@example.com",
+            "subject" => "Email with Attachment",
+            "text" => "Please see the attached file.",
         ];
 
         // Note: Replace with actual file path
-        $files = [__FILE__]; // Attach this example file
+        $files = [
+            "filename" => "test.png",
+            "contents" => file_get_contents(__DIR__ . "/test.png"),
+        ]; // Attach this example file
 
         $result = $messagesApi->sendMessage($domain, $emailData, $files);
-        echo "✓ Sent email with attachment: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        echo "✓ Sent email with attachment: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
     } catch (ApiException $e) {
-        echo "✗ Failed to send email with attachment: " . $e->getMessage() . "\n";
+        echo "✗ Failed to send email with attachment: " .
+            $e->getMessage() .
+            "\n";
     }
 
     // Send bulk email
     try {
         $emailData = [
-            'from' => 'sender@' . $domain,
-            'to' => ['recipient1@example.com', 'recipient2@example.com'],
-            'subject' => 'Bulk Email from PHP SDK',
-            'text' => "This is a bulk email sent to multiple recipients."
+            "from" => "sender@" . $domain,
+            "to" => ["recipient1@example.com", "recipient2@example.com"],
+            "subject" => "Bulk Email from PHP SDK",
+            "text" => "This is a bulk email sent to multiple recipients.",
         ];
 
         $result = $messagesApi->sendBulkMessage($domain, $emailData);
-        echo "✓ Sent bulk email: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
-        echo "  Message: " . ($result['message'] ?? 'No message') . "\n";
+        echo "✓ Sent bulk email: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
+        echo "  Message: " . ($result["message"] ?? "No message") . "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to send bulk email: " . $e->getMessage() . "\n";
     }
@@ -164,16 +196,18 @@ try {
     // Send template-based email (if you have template GUID)
     try {
         $templateData = [
-            'template_guid' => '550e8400-e29b-41d4-a716-446655440000', // Replace with actual template GUID
-            'to' => 'recipient@example.com',
-            'variables' => [
-                'name' => 'John Doe',
-                'product' => 'PHP SDK'
-            ]
+            "template_guid" => "550e8400-e29b-41d4-a716-446655440000", // Replace with actual template GUID
+            "to" => "recipient@example.com",
+            "variables" => [
+                "name" => "John Doe",
+                "product" => "PHP SDK",
+            ],
         ];
 
         $result = $messagesApi->sendTemplateMessage($domain, $templateData);
-        echo "✓ Sent template email: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
+        echo "✓ Sent template email: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to send template email: " . $e->getMessage() . "\n";
     }
@@ -186,13 +220,16 @@ try {
 
     // Get recent logs
     try {
-        $logs = $logsApi->getLogs($domain, ['limit' => 10]);
-        echo "✓ Retrieved " . count($logs['data']) . " log entries\n";
+        $logs = $logsApi->getLogs($domain, ["limit" => 10]);
+        echo "✓ Retrieved " . count($logs["data"]) . " log entries\n";
 
-        if (!empty($logs['data'])) {
-            $firstLog = $logs['data'][0];
-            echo "  Latest event: " . $firstLog->getEventType() .
-                 " at " . ($firstLog->getTimestampDateTime()?->format('Y-m-d H:i:s')) . "\n";
+        if (!empty($logs["data"])) {
+            $firstLog = $logs["data"][0];
+            echo "  Latest event: " .
+                $firstLog->getEventType() .
+                " at " .
+                $firstLog->getTimestampDateTime()?->format("Y-m-d H:i:s") .
+                "\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to get logs: " . $e->getMessage() . "\n";
@@ -200,11 +237,13 @@ try {
 
     // Get logs by date range
     try {
-        $startDate = new \DateTime('-7 days');
+        $startDate = new \DateTime("-7 days");
         $endDate = new \DateTime();
 
-        $logs = $logsApi->getLogsByDateRange($domain, $startDate, $endDate, ['limit' => 5]);
-        echo "✓ Retrieved " . count($logs['data']) . " logs from last 7 days\n";
+        $logs = $logsApi->getLogsByDateRange($domain, $startDate, $endDate, [
+            "limit" => 5,
+        ]);
+        echo "✓ Retrieved " . count($logs["data"]) . " logs from last 7 days\n";
     } catch (ApiException $e) {
         echo "✗ Failed to get logs by date range: " . $e->getMessage() . "\n";
     }
@@ -226,13 +265,18 @@ try {
 
     // Get suppressions
     try {
-        $suppressions = $suppressionsApi->getSuppressions($domain, ['limit' => 5]);
-        echo "✓ Retrieved " . count($suppressions['data']) . " suppressions\n";
+        $suppressions = $suppressionsApi->getSuppressions($domain, [
+            "limit" => 5,
+        ]);
+        echo "✓ Retrieved " . count($suppressions["data"]) . " suppressions\n";
 
-        if (!empty($suppressions['data'])) {
-            $firstSuppression = $suppressions['data'][0];
-            echo "  Latest suppression: " . $firstSuppression->getType() .
-                 " for " . $firstSuppression->getRecipient() . "\n";
+        if (!empty($suppressions["data"])) {
+            $firstSuppression = $suppressions["data"][0];
+            echo "  Latest suppression: " .
+                $firstSuppression->getType() .
+                " for " .
+                $firstSuppression->getRecipient() .
+                "\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to get suppressions: " . $e->getMessage() . "\n";
@@ -246,11 +290,13 @@ try {
 
     // Validate a single email
     try {
-        $result = $emailValidationApi->validate('test@example.com');
-        echo "✓ Validated email: {$result['data']->getEmail()}\n";
-        echo "  Is valid: " . ($result['data']->isValid() ? 'Yes' : 'No') . "\n";
-        if (!$result['data']->isCached()) {
-            echo "  Validated at: {$result['data']->getValidatedAt()}\n";
+        $result = $emailValidationApi->validate("test@example.com");
+        echo "✓ Validated email: {$result["data"]->getEmail()}\n";
+        echo "  Is valid: " .
+            ($result["data"]->isValid() ? "Yes" : "No") .
+            "\n";
+        if (!$result["data"]->isCached()) {
+            echo "  Validated at: {$result["data"]->getValidatedAt()}\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to validate email: " . $e->getMessage() . "\n";
@@ -258,22 +304,30 @@ try {
 
     // Validate with strict mode
     try {
-        $result = $emailValidationApi->validateStrict('test@example.com');
-        echo "✓ Strict validated email: {$result['data']->getEmail()}\n";
-        echo "  Is valid: " . ($result['data']->isValid() ? 'Yes' : 'No') . "\n";
+        $result = $emailValidationApi->validateStrict("test@example.com");
+        echo "✓ Strict validated email: {$result["data"]->getEmail()}\n";
+        echo "  Is valid: " .
+            ($result["data"]->isValid() ? "Yes" : "No") .
+            "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to strictly validate email: " . $e->getMessage() . "\n";
     }
 
     // Validate batch of emails
     try {
-        $emails = ['test1@example.com', 'test2@example.com', 'test3@example.com'];
+        $emails = [
+            "test1@example.com",
+            "test2@example.com",
+            "test3@example.com",
+        ];
         $result = $emailValidationApi->validateBatch($emails);
         echo "✓ Validated " . count($emails) . " emails\n";
-        echo "  Valid: " . $result['data']->getValidCount() . "\n";
-        echo "  Invalid: " . $result['data']->getInvalidCount() . "\n";
-        echo "  Cached: " . $result['data']->getCachedCount() . "\n";
-        echo "  Freshly validated: " . $result['data']->getValidatedCount() . "\n";
+        echo "  Valid: " . $result["data"]->getValidCount() . "\n";
+        echo "  Invalid: " . $result["data"]->getInvalidCount() . "\n";
+        echo "  Cached: " . $result["data"]->getCachedCount() . "\n";
+        echo "  Freshly validated: " .
+            $result["data"]->getValidatedCount() .
+            "\n";
     } catch (ApiException $e) {
         echo "✗ Failed to validate batch: " . $e->getMessage() . "\n";
     }
@@ -288,9 +342,11 @@ try {
     try {
         $quota = $userApi->getQuota();
         echo "✓ Retrieved quota information\n";
-        echo "  Current quota: " . $quota['data']['current_quota'] . "\n";
-        echo "  Max quota: " . $quota['data']['max_quota'] . "\n";
-        echo "  Usage percentage: " . $quota['data']['usage_percentage'] . "%\n";
+        echo "  Current quota: " . $quota["data"]["current_quota"] . "\n";
+        echo "  Max quota: " . $quota["data"]["max_quota"] . "\n";
+        echo "  Usage percentage: " .
+            $quota["data"]["usage_percentage"] .
+            "%\n";
     } catch (ApiException $e) {
         echo "✗ Failed to get quota: " . $e->getMessage() . "\n";
     }
@@ -304,10 +360,10 @@ try {
     // List webhooks
     try {
         $webhooks = $webhooksApi->getWebhooks($domain);
-        echo "✓ Retrieved " . count($webhooks['data']) . " webhooks\n";
+        echo "✓ Retrieved " . count($webhooks["data"]) . " webhooks\n";
 
-        if (!empty($webhooks['data'])) {
-            $firstWebhook = $webhooks['data'][0];
+        if (!empty($webhooks["data"])) {
+            $firstWebhook = $webhooks["data"][0];
             echo "  First webhook: {$firstWebhook->getType()} -> {$firstWebhook->getUrl()}\n";
         }
     } catch (ApiException $e) {
@@ -316,10 +372,16 @@ try {
 
     // Create a new webhook
     try {
-        $result = $webhooksApi->createWebhook($domain, 'delivered', 'https://example.com/webhook');
-        echo "✓ Created webhook: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
-        if (isset($result['data'])) {
-            echo "  GUID: {$result['data']->getWebhookGuid()}\n";
+        $result = $webhooksApi->createWebhook(
+            $domain,
+            "delivered",
+            "https://example.com/webhook",
+        );
+        echo "✓ Created webhook: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
+        if (isset($result["data"])) {
+            echo "  GUID: {$result["data"]->getWebhookGuid()}\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to create webhook: " . $e->getMessage() . "\n";
@@ -327,24 +389,30 @@ try {
 
     // Get a specific webhook
     try {
-        $webhookGuid = '550e8400-e29b-41d4-a716-446655440000'; // Replace with actual webhook GUID
+        $webhookGuid = "550e8400-e29b-41d4-a716-446655440000"; // Replace with actual webhook GUID
         $webhook = $webhooksApi->getWebhook($domain, $webhookGuid);
         echo "✓ Got webhook details\n";
-        echo "  Type: {$webhook['data']->getType()}\n";
-        echo "  URL: {$webhook['data']->getUrl()}\n";
+        echo "  Type: {$webhook["data"]->getType()}\n";
+        echo "  URL: {$webhook["data"]->getUrl()}\n";
     } catch (ApiException $e) {
         echo "✗ Failed to get webhook: " . $e->getMessage() . "\n";
     }
 
     // Test a webhook URL
     try {
-        $result = $webhooksApi->testWebhook($domain, 'https://example.com/webhook', 'delivered');
-        echo "✓ Tested webhook: " . ($result['success'] ? 'Success' : 'Failed') . "\n";
-        if (isset($result['data']['response_status'])) {
-            echo "  Response status: {$result['data']['response_status']}\n";
+        $result = $webhooksApi->testWebhook(
+            $domain,
+            "https://example.com/webhook",
+            "delivered",
+        );
+        echo "✓ Tested webhook: " .
+            ($result["success"] ? "Success" : "Failed") .
+            "\n";
+        if (isset($result["data"]["response_status"])) {
+            echo "  Response status: {$result["data"]["response_status"]}\n";
         }
-        if (isset($result['data']['response_time'])) {
-            echo "  Response time: {$result['data']['response_time']}ms\n";
+        if (isset($result["data"]["response_time"])) {
+            echo "  Response time: {$result["data"]["response_time"]}ms\n";
         }
     } catch (ApiException $e) {
         echo "✗ Failed to test webhook: " . $e->getMessage() . "\n";
@@ -372,7 +440,7 @@ try {
     // Example of specific exception handling
     try {
         // This will likely fail with invalid credentials
-        $invalidClient = new SmtpClient('invalid_user', 'invalid_token');
+        $invalidClient = new SmtpClient("invalid_user", "invalid_token");
         $invalidDomainsApi = new DomainsApi($invalidClient);
         $invalidDomainsApi->listDomains();
     } catch (AuthenticationException $e) {
@@ -387,7 +455,6 @@ try {
     }
 
     echo "\n=== EXAMPLES COMPLETED ===\n";
-
 } catch (Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
     echo "Trace: " . $e->getTraceAsString() . "\n";
