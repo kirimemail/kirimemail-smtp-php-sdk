@@ -54,22 +54,14 @@ class KirimEmailTransport extends AbstractTransport
                 $contentType = $attachmentHeaders
                     ->get("Content-Type")
                     ->getBody();
-                $disposition = $attachmentHeaders->getHeaderBody(
-                    "Content-Disposition",
-                );
                 $filename = $attachmentHeaders->getHeaderParameter(
                     "Content-Disposition",
                     "filename",
                 );
 
                 $attachments[] = [
-                    "content_type" => $contentType,
-                    "content" => str_replace(
-                        "\r\n",
-                        "",
-                        $attachment->bodyToString(),
-                    ),
                     "filename" => $filename,
+                    "contents" => $attachment->bodyToString(),
                 ];
             }
         }
