@@ -29,45 +29,55 @@ class SmtpClient
         ?string $token = null,
         ?string $domainApiKey = null,
         ?string $domainApiSecret = null,
-        string $baseUrl = 'https://smtp-app.kirim.email'
+        string $baseUrl = "https://smtp-app.kirim.email",
     ) {
         $this->username = $username;
         $this->token = $token;
         $this->domainApiKey = $domainApiKey;
         $this->domainApiSecret = $domainApiSecret;
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->baseUrl = rtrim($baseUrl, "/");
 
         $this->httpClient = new GuzzleClient([
-            'base_uri' => $this->baseUrl,
-            'timeout' => 30,
-            'connect_timeout' => 10,
-            'http_errors' => false,
-            'headers' => [
-                'User-Agent' => 'KirimEmail-PHP-SDK/1.0.0',
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
+            "base_uri" => $this->baseUrl,
+            "timeout" => 30,
+            "connect_timeout" => 10,
+            "http_errors" => false,
+            "headers" => [
+                "User-Agent" => "KirimEmail-PHP-SDK/1.0.0",
+                "Accept" => "application/json",
+                "Content-Type" => "application/json",
             ],
         ]);
     }
 
-    public function get(string $endpoint, array $params = [], array $headers = []): array
-    {
-        return $this->request('GET', $endpoint, [
-            'query' => $params,
-            'headers' => $headers,
+    public function get(
+        string $endpoint,
+        array $params = [],
+        array $headers = [],
+    ): array {
+        return $this->request("GET", $endpoint, [
+            "query" => $params,
+            "headers" => $headers,
         ]);
     }
 
-    public function post(string $endpoint, array $data = [], array $headers = []): array
-    {
-        return $this->request('POST', $endpoint, [
-            'json' => $data,
-            'headers' => $headers,
+    public function post(
+        string $endpoint,
+        array $data = [],
+        array $headers = [],
+    ): array {
+        return $this->request("POST", $endpoint, [
+            "json" => $data,
+            "headers" => $headers,
         ]);
     }
 
-    public function postMultipart(string $endpoint, array $data = [], array $files = [], array $headers = []): array
-    {
+    public function postMultipart(
+        string $endpoint,
+        array $data = [],
+        array $files = [],
+        array $headers = [],
+    ): array {
         $multipart = [];
 
         // Add form fields
@@ -75,136 +85,174 @@ class SmtpClient
             if (is_array($value)) {
                 foreach ($value as $item) {
                     $multipart[] = [
-                        'name' => $key . '[]',
-                        'contents' => $item,
+                        "name" => $key . "[]",
+                        "contents" => $item,
                     ];
                 }
             } else {
                 $multipart[] = [
-                    'name' => $key,
-                    'contents' => $value,
+                    "name" => $key,
+                    "contents" => $value,
                 ];
             }
         }
 
-        // Add files with attachment[] naming
-        foreach ($files as $file) {
-            if (is_array($file)) {
-                foreach ($file as $filePath) {
-                    $multipart[] = [
-                        'name' => 'attachment[]',
-                        'contents' => $this->getFileContents($filePath),
-                        'filename' => $this->getFilename($filePath),
-                    ];
-                }
+        // Add files with attachments naming
+        $filesArray = is_array($files) && !empty($files) && !isset($files[0]) && isset($files['contents']) ? [$files] : $files;
+        
+        foreach ($filesArray as $file) {
+            if (is_array($file) && isset($file['contents'])) {
+                $multipart[] = [
+                    "name" => "attachments",
+                    "contents" => $file['contents'],
+                    "filename" => $file['filename'] ?? $file['name'] ?? 'file',
+                ];
+            } elseif (is_string($file) && file_exists($file)) {
+                $multipart[] = [
+                    "name" => "attachments",
+                    "contents" => fopen($file, "r"),
+                    "filename" => basename($file),
+                ];
             } else {
                 $multipart[] = [
-                    'name' => 'attachment[]',
-                    'contents' => $this->getFileContents($file),
-                    'filename' => $this->getFilename($file),
+                    "name" => "attachments",
+                    "contents" => $this->getFileContents($file),
+                    "filename" => $this->getFilename($file),
                 ];
             }
         }
 
-        private function getFileContents($file): mixed
-        {
-            if (is_resource($file) || $file instanceof \SplFileInfo) {
-                return $file;
-            }
-            if (is_string($file) && file_exists($file)) {
-                return fopen($file, 'r');
-            }
+        return $this->request("POST", $endpoint, [
+            "multipart" => $multipart,
+            "headers" => $headers,
+        ]);
+    }
+
+    private function getFileContents($file): mixed
+    {
+        if (is_resource($file) || $file instanceof \SplFileInfo) {
             return $file;
         }
-
-        private function getFilename($file): string
-        {
-            if (is_string($file) && file_exists($file)) {
-                return basename($file);
-            }
-            if ($file instanceof \SplFileInfo) {
-                return $file->getBasename();
-            }
-            return 'file';
+        if (is_string($file) && file_exists($file)) {
+            return fopen($file, "r");
         }
+        return $file;
+    }
 
-        return $this->request('POST', $endpoint, [
-            'multipart' => $multipart,
-            'headers' => $headers,
+    private function getFilename($file): string
+    {
+        if (is_array($file)) {
+            return $file["filename"] ?? ($file["name"] ?? "file");
+        }
+        if ($file instanceof \SplFileInfo) {
+            return $file->getBasename();
+        }
+        if (is_string($file) && file_exists($file)) {
+            return basename($file);
+        }
+        return "file";
+    }
+
+    public function put(
+        string $endpoint,
+        array $data = [],
+        array $headers = [],
+    ): array {
+        return $this->request("PUT", $endpoint, [
+            "json" => $data,
+            "headers" => $headers,
         ]);
     }
 
-    public function put(string $endpoint, array $data = [], array $headers = []): array
-    {
-        return $this->request('PUT', $endpoint, [
-            'json' => $data,
-            'headers' => $headers,
+    public function delete(
+        string $endpoint,
+        array $params = [],
+        array $headers = [],
+    ): array {
+        return $this->request("DELETE", $endpoint, [
+            "query" => $params,
+            "headers" => $headers,
         ]);
     }
 
-    public function delete(string $endpoint, array $params = [], array $headers = []): array
-    {
-        return $this->request('DELETE', $endpoint, [
-            'query' => $params,
-            'headers' => $headers,
+    public function deleteWithBody(
+        string $endpoint,
+        array $data = [],
+        array $headers = [],
+    ): array {
+        return $this->request("DELETE", $endpoint, [
+            "json" => $data,
+            "headers" => $headers,
         ]);
     }
 
-    public function deleteWithBody(string $endpoint, array $data = [], array $headers = []): array
-    {
-        return $this->request('DELETE', $endpoint, [
-            'json' => $data,
-            'headers' => $headers,
-        ]);
-    }
-
-    public function request(string $method, string $endpoint, array $options = []): array
-    {
+    public function request(
+        string $method,
+        string $endpoint,
+        array $options = [],
+    ): array {
         $options = $this->addAuthenticationHeaders($options, $endpoint);
 
         try {
-            $response = $this->httpClient->request($method, $endpoint, $options);
+            $response = $this->httpClient->request(
+                $method,
+                $endpoint,
+                $options,
+            );
             return $this->parseResponse($response);
         } catch (GuzzleRequestException $e) {
             if ($e->hasResponse()) {
                 $this->parseResponse($e->getResponse());
             }
-            throw new ApiException('Network error: ' . $e->getMessage(), 0, $e);
+            throw new ApiException("Network error: " . $e->getMessage(), 0, $e);
         }
     }
 
-    private function addAuthenticationHeaders(array $options, string $endpoint): array
-    {
-        $headers = $options['headers'] ?? [];
+    private function addAuthenticationHeaders(
+        array $options,
+        string $endpoint,
+    ): array {
+        $headers = $options["headers"] ?? [];
 
         // Determine authentication type based on endpoint
-        if (strpos($endpoint, '/api/v4/') === 0) {
+        if (strpos($endpoint, "/api/v4/") === 0) {
             // Domain API Key authentication
             if ($this->domainApiKey && $this->domainApiSecret) {
-                $authHeader = 'Basic ' . base64_encode($this->domainApiKey . ':' . $this->domainApiSecret);
-                $headers['Authorization'] = $authHeader;
+                $authHeader =
+                    "Basic " .
+                    base64_encode(
+                        $this->domainApiKey . ":" . $this->domainApiSecret,
+                    );
+                $headers["Authorization"] = $authHeader;
 
                 // Add domain header if not already present
-                if (!isset($headers['domain']) && !isset($options['multipart'])) {
-                    $headers['domain'] = $this->extractDomainFromEndpoint($endpoint);
+                if (
+                    !isset($headers["domain"]) &&
+                    !isset($options["multipart"])
+                ) {
+                    $headers["domain"] = $this->extractDomainFromEndpoint(
+                        $endpoint,
+                    );
                 }
             }
         } else {
             // Basic authentication
             if ($this->username && $this->token) {
-                $authHeader = 'Basic ' . base64_encode($this->username . ':' . $this->token);
-                $headers['Authorization'] = $authHeader;
+                $authHeader =
+                    "Basic " .
+                    base64_encode($this->username . ":" . $this->token);
+                $headers["Authorization"] = $authHeader;
             }
         }
 
-        $options['headers'] = $headers;
+        $options["headers"] = $headers;
         return $options;
     }
 
     private function extractDomainFromEndpoint(string $endpoint): ?string
     {
         // Extract domain from endpoint path if possible
-        if (preg_match('/\/api\/domains\/([^\/]+)/', $endpoint, $matches)) {
+        if (preg_match("/\/api\/domains\/([^\/]+)/", $endpoint, $matches)) {
             return $matches[1];
         }
         return null;
@@ -216,13 +264,15 @@ class SmtpClient
         $body = (string) $response->getBody();
 
         if (empty($body)) {
-            return ['success' => $statusCode < 400];
+            return ["success" => $statusCode < 400];
         }
 
         $data = json_decode($body, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new ApiException('Invalid JSON response: ' . json_last_error_msg());
+            throw new ApiException(
+                "Invalid JSON response: " . json_last_error_msg(),
+            );
         }
 
         // Handle error responses
@@ -235,11 +285,11 @@ class SmtpClient
 
     private function handleErrorResponse(int $statusCode, array $data): void
     {
-        $message = $data['message'] ?? $data['error'] ?? 'Unknown API error';
+        $message = $data["message"] ?? ($data["error"] ?? "Unknown API error");
 
         switch ($statusCode) {
             case 400:
-                throw new ValidationException($message, $data['errors'] ?? []);
+                throw new ValidationException($message, $data["errors"] ?? []);
             case 401:
                 throw new AuthenticationException($message);
             case 403:
@@ -247,7 +297,7 @@ class SmtpClient
             case 404:
                 throw new NotFoundException($message);
             case 422:
-                throw new ValidationException($message, $data['errors'] ?? []);
+                throw new ValidationException($message, $data["errors"] ?? []);
             default:
                 if ($statusCode >= 500) {
                     throw new ServerException($message);
@@ -258,16 +308,16 @@ class SmtpClient
 
     public function setBaseUrl(string $baseUrl): void
     {
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->baseUrl = rtrim($baseUrl, "/");
         $this->httpClient = new GuzzleClient([
-            'base_uri' => $this->baseUrl,
-            'timeout' => 30,
-            'connect_timeout' => 10,
-            'http_errors' => false,
-            'headers' => [
-                'User-Agent' => 'KirimEmail-PHP-SDK/1.0.0',
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
+            "base_uri" => $this->baseUrl,
+            "timeout" => 30,
+            "connect_timeout" => 10,
+            "http_errors" => false,
+            "headers" => [
+                "User-Agent" => "KirimEmail-PHP-SDK/1.0.0",
+                "Accept" => "application/json",
+                "Content-Type" => "application/json",
             ],
         ]);
     }
@@ -277,12 +327,15 @@ class SmtpClient
         return $this->baseUrl;
     }
 
-    public function stream(string $endpoint, array $params = [], array $headers = []): \Generator
-    {
+    public function stream(
+        string $endpoint,
+        array $params = [],
+        array $headers = [],
+    ): \Generator {
         $options = [
-            'query' => $params,
-            'headers' => $headers,
-            'stream' => true,
+            "query" => $params,
+            "headers" => $headers,
+            "stream" => true,
         ];
 
         $options = $this->addAuthenticationHeaders($options, $endpoint);
@@ -294,9 +347,9 @@ class SmtpClient
             $line = $stream->readline();
             if (!empty($line) && $line !== "\n") {
                 // Remove "data: " prefix from SSE format
-                if (strpos($line, 'data: ') === 0) {
+                if (strpos($line, "data: ") === 0) {
                     $data = substr($line, 6);
-                    if ($data !== '[DONE]') {
+                    if ($data !== "[DONE]") {
                         $decoded = json_decode($data, true);
                         if (json_last_error() === JSON_ERROR_NONE) {
                             yield $decoded;
