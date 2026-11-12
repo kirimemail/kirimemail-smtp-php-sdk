@@ -22,7 +22,7 @@ class MessagesApi
  * @param string $domain Domain name
  * @param array $data Email data
  * @param array $files Optional file attachments
- * @return array{success: bool, message: string}
+ * @return array{success: bool, message?: string, messages?: array<int, array{to: string, message_guid: string}>}
  * @throws ApiException
  */
     public function sendMessage(string $domain, array $data, array $files = []): array
@@ -42,7 +42,7 @@ class MessagesApi
  * @param string $domain Domain name
  * @param array $data Template data
  * @param array $files Optional file attachments
- * @return array{success: bool, message: string, template_guid: string, template_name: string}
+ * @return array{success: bool, message?: string, template_guid?: string, template_name?: string, messages?: array<int, array{to: string, message_guid: string}>}
  * @throws ApiException
  */
     public function sendTemplateMessage(string $domain, array $data, array $files = []): array
@@ -162,7 +162,7 @@ class MessagesApi
      * @param array $data Email data
      * @param array $files File attachments
      * @param array $attachmentOptions Attachment processing options
-     * @return array{success: bool, message: string}
+     * @return array{success: bool, message?: string, messages?: array<int, array{to: string, message_guid: string}>}
      * @throws ApiException
      */
     public function sendMessageWithAttachmentOptions(string $domain, array $data, array $files, array $attachmentOptions = []): array
@@ -180,7 +180,7 @@ class MessagesApi
      * @param string $domain Domain name
      * @param array $data Email data
      * @param array $files Optional file attachments
-     * @return array{success: bool, message: string}
+     * @return array{success: bool, message?: string, messages?: array<int, array{to: string, message_guid: string}>}
      * @throws ApiException
      */
     public function sendBulkMessage(string $domain, array $data, array $files = []): array
