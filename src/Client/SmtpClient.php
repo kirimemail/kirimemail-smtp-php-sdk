@@ -99,7 +99,7 @@ class SmtpClient
 
         // Add files with attachments naming
         $filesArray = is_array($files) && !empty($files) && !isset($files[0]) && isset($files['contents']) ? [$files] : $files;
-        
+
         foreach ($filesArray as $file) {
             if (is_array($file) && isset($file['contents'])) {
                 $multipart[] = [
