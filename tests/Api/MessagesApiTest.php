@@ -24,7 +24,10 @@ class MessagesApiTest extends TestCase
     {
         $mockResponse = [
             'success' => true,
-            'message' => 'Message sent successfully'
+            'message' => 'Email send jobs dispatched for 1 recipient(s)',
+            'messages' => [
+                ['to' => 'recipient@example.com', 'message_guid' => '0193f3c4-aaaa-bbbb-cccc-000000000001'],
+            ],
         ];
 
         $emailData = [
@@ -42,7 +45,10 @@ class MessagesApiTest extends TestCase
         $result = $this->messagesApi->sendMessage('example.com', $emailData);
 
         $this->assertTrue($result['success']);
-        $this->assertEquals('Message sent successfully', $result['message']);
+        $this->assertEquals('Email send jobs dispatched for 1 recipient(s)', $result['message']);
+        $this->assertCount(1, $result['messages']);
+        $this->assertEquals('recipient@example.com', $result['messages'][0]['to']);
+        $this->assertEquals('0193f3c4-aaaa-bbbb-cccc-000000000001', $result['messages'][0]['message_guid']);
     }
 
     public function testSendMessageWithAttachments()
@@ -76,7 +82,12 @@ class MessagesApiTest extends TestCase
     {
         $mockResponse = [
             'success' => true,
-            'message' => 'Template message sent successfully',
+            'message' => 'Template-based email jobs dispatched for 1 recipient(s)',
+            'template_guid' => 'template-guid-123',
+            'template_name' => 'Welcome Email',
+            'messages' => [
+                ['to' => 'recipient@example.com', 'message_guid' => '0193f3c4-aaaa-bbbb-cccc-000000000002'],
+            ],
             'data' => [
                 'template_guid' => 'template-guid-123',
                 'template_name' => 'Welcome Email'
@@ -100,8 +111,11 @@ class MessagesApiTest extends TestCase
         $result = $this->messagesApi->sendTemplateMessage('example.com', $templateData);
 
         $this->assertTrue($result['success']);
-        $this->assertEquals('Template message sent successfully', $result['message']);
+        $this->assertEquals('Template-based email jobs dispatched for 1 recipient(s)', $result['message']);
         $this->assertEquals('template-guid-123', $result['data']['template_guid']);
+        $this->assertCount(1, $result['messages']);
+        $this->assertEquals('recipient@example.com', $result['messages'][0]['to']);
+        $this->assertEquals('0193f3c4-aaaa-bbbb-cccc-000000000002', $result['messages'][0]['message_guid']);
     }
 
     public function testSendTemplateMessageWithAttachments()
